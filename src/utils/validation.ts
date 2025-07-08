@@ -285,6 +285,24 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 		}
 	}
 
+	// Check for at least one external interface for floating IP functionality
+	const nodesWithExternalInterface = nodes.filter((node) => {
+		// Check if node is network type or has network role
+		const isNetworkNode = node.type === "network" || (node.type === "hybrid" && node.hybridRoles?.network);
+		// And has external interface
+		return isNetworkNode && node.externalNic;
+	});
+
+	if (nodesWithExternalInterface.length === 0) {
+		details.push(
+			"At least one network node (or hybrid node with network role) must have an external interface for floating IP functionality."
+		);
+		isValid = false;
+	} else {
+		const nodeNames = nodesWithExternalInterface.map((node) => node.hostname).join(", ");
+		details.push(`External interface available for floating IPs on: ${nodeNames}`);
+	}
+
 	return {
 		isValid,
 		message: isValid ? "Configuration validation passed!" : "Configuration validation failed!",

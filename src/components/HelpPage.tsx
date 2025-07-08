@@ -174,13 +174,17 @@ const HelpPage: React.FC = () => {
 							</p>
 							<div className="text-xs text-gray-500">
 								<p>
-									<strong>Required:</strong> Network nodes
+									<strong>Required:</strong> At least one network node (for floating IPs)
 								</p>
 								<p>
 									<strong>Optional:</strong> Controller (for dashboard access)
 								</p>
 								<p>
 									<strong>Interface:</strong> ens5
+								</p>
+								<p className="text-red-600 mt-1">
+									<strong>⚠️ Constraint:</strong> Deployment must have at least one network node with
+									external interface
 								</p>
 							</div>
 						</div>

@@ -255,6 +255,7 @@ export class SpecificationService {
 			"⚠️  Interface Constraints: Compute nodes cannot have external interfaces",
 			"⚠️  Interface Constraints: Network/Compute/Storage nodes require tunnel interfaces",
 			"⚠️  Interface Constraints: Hybrid nodes with controller + other roles require tunnel interfaces",
+			"⚠️  Floating IP Constraint: At least one network node must have an external interface",
 		];
 
 		// Node-specific recommendations
@@ -338,6 +339,16 @@ export class SpecificationService {
 					invalidNodes.push(`${node.hostname} (hybrid with roles requiring tunnel interface)`);
 				}
 			}
+		}
+
+		// Check for external interface constraint (at least one network node with external interface)
+		const networkNodesWithExternal = nodes.filter((node) => {
+			const isNetworkNode = node.type === "network" || (node.type === "hybrid" && node.hybridRoles?.network);
+			return isNetworkNode && node.externalNic;
+		});
+
+		if (networkNodesWithExternal.length === 0) {
+			invalidNodes.push("No network nodes with external interface (required for floating IPs)");
 		}
 
 		if (invalidNodes.length > 0) {
