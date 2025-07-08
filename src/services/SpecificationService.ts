@@ -66,11 +66,25 @@ export class SpecificationService {
 				}
 			}
 
-			// Count actual network interfaces
-			let nicCount = 1; // Management NIC
+			// Count actual network interfaces based on node configuration
+			let nicCount = 1; // Management NIC (always present)
 			if (node.tunnelNic) nicCount++;
 			if (node.externalNic) nicCount++;
+			if (node.vipExternalNic) nicCount++;
 			spec.networkInterfaces = nicCount;
+
+			// Add interface details to description
+			const interfaces = ["Management"];
+			if (node.tunnelNic) interfaces.push("Tunnel");
+			if (node.externalNic) interfaces.push("External");
+			if (node.vipExternalNic) interfaces.push("VIP External");
+			
+			const interfaceDetails = `${nicCount} NICs: ${interfaces.join(", ")}`;
+			if (spec.description) {
+				spec.description = `${spec.description} - ${interfaceDetails}`;
+			} else {
+				spec.description = interfaceDetails;
+			}
 
 			return {
 				...spec,
@@ -89,40 +103,40 @@ export class SpecificationService {
 					cpuCores: 6,
 					ram: "16GB",
 					storage: ["80GB (OS)"],
-					networkInterfaces: 2,
-					description: "Controller node for OpenStack management services",
+					networkInterfaces: 2, // Management + External (no tunnel allowed)
+					description: "Controller node - manages OpenStack services, no tunnel interface",
 				};
 			case "network":
 				return {
 					cpuCores: 4,
 					ram: "10GB",
 					storage: ["80GB (OS)"],
-					networkInterfaces: 3,
-					description: "Network node for Neutron networking services",
+					networkInterfaces: 3, // Management + Tunnel + External
+					description: "Network node - handles Neutron networking, requires tunnel interface",
 				};
 			case "compute":
 				return {
 					cpuCores: 6,
 					ram: "16GB",
 					storage: ["100GB (OS)", "80GB (Cinder storage)"],
-					networkInterfaces: 2,
-					description: "Compute node for hosting virtual machines",
+					networkInterfaces: 2, // Management + Tunnel (no external allowed)
+					description: "Compute node - hosts VMs, requires tunnel interface, no external interface",
 				};
 			case "storage":
 				return {
 					cpuCores: 4,
 					ram: "8GB",
 					storage: ["80GB (OS)", "200GB+ (Block storage)"],
-					networkInterfaces: 2,
-					description: "Dedicated storage node for Cinder volumes",
+					networkInterfaces: 2, // Management + Tunnel
+					description: "Storage node - provides Cinder volumes, requires tunnel interface",
 				};
 			case "hybrid":
 				return {
 					cpuCores: 8,
 					ram: "24GB",
 					storage: ["120GB (OS)", "100GB (Storage)"],
-					networkInterfaces: 3,
-					description: "Multi-role node combining multiple services",
+					networkInterfaces: 3, // Variable based on roles
+					description: "Multi-role node - interface requirements vary by selected roles",
 				};
 			default:
 				return {
@@ -237,6 +251,9 @@ export class SpecificationService {
 			"Use dedicated physical networks for management and tunnel traffic when possible",
 			"Allocate at least 20% extra disk space beyond minimum requirements",
 			"Enable container runtime (Docker) on all nodes before deployment",
+			"⚠️  Interface Constraints: Controller nodes cannot have tunnel interfaces",
+			"⚠️  Interface Constraints: Compute nodes cannot have external interfaces",
+			"⚠️  Interface Constraints: Network/Compute/Storage nodes require tunnel interfaces",
 		];
 
 		// Node-specific recommendations
@@ -282,6 +299,34 @@ export class SpecificationService {
 
 		if (!networkConfig.externalCidr) {
 			recommendations.push("🔗 External Network: Configure external network for floating IP access");
+		}
+
+		// Constraint-specific recommendations
+		const invalidNodes = [];
+		for (const node of nodes) {
+			// Check for constraint violations
+			if (node.type === "controller" && node.tunnelNic) {
+				invalidNodes.push(`${node.hostname} (controller with tunnel interface)`);
+			}
+			if ((node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) && node.externalNic) {
+				invalidNodes.push(`${node.hostname} (compute with external interface)`);
+			}
+			if ((node.type === "network" || node.type === "compute" || node.type === "storage") && !node.tunnelNic) {
+				invalidNodes.push(`${node.hostname} (${node.type} without tunnel interface)`);
+			}
+			if (node.type === "hybrid" && node.hybridRoles) {
+				const needsTunnel = node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage;
+				if (needsTunnel && !node.tunnelNic) {
+					invalidNodes.push(`${node.hostname} (hybrid with roles requiring tunnel)`);
+				}
+				if (node.hybridRoles.controller && node.tunnelNic) {
+					invalidNodes.push(`${node.hostname} (hybrid controller with tunnel)`);
+				}
+			}
+		}
+
+		if (invalidNodes.length > 0) {
+			recommendations.push(`❌ Configuration Issues: Fix these constraint violations: ${invalidNodes.join(", ")}`);
 		}
 
 		// Performance recommendations

@@ -131,16 +131,79 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 			}
 		}
 
-		// Enforce tunnel IP requirement for compute, storage, network, and hybrid nodes
-		if (
-			(node.type === "compute" || node.type === "storage" || node.type === "network" || node.type === "hybrid") &&
-			!node.tunnelNic?.ip
-		) {
-			details.push(
-				`${node.type.charAt(0).toUpperCase() + node.type.slice(1)} node ${
-					node.hostname
-				} requires a tunnel IP address.`
-			);
+		// NEW CONSTRAINTS: Interface requirements by node type
+		if (node.type === "controller") {
+			// Controller nodes cannot have tunnel interface
+			if (node.tunnelNic?.ip) {
+				details.push(`Controller node ${node.hostname} cannot have a tunnel interface.`);
+				isValid = false;
+			}
+		}
+
+		if (node.type === "compute") {
+			// Compute nodes must have tunnel interface and cannot have external interface
+			if (!node.tunnelNic?.ip) {
+				details.push(`Compute node ${node.hostname} must have a tunnel interface.`);
+				isValid = false;
+			}
+			if (node.externalNic?.ip) {
+				details.push(`Compute node ${node.hostname} cannot have an external interface.`);
+				isValid = false;
+			}
+		}
+
+		if (node.type === "network") {
+			// Network nodes must have tunnel interface
+			if (!node.tunnelNic?.ip) {
+				details.push(`Network node ${node.hostname} must have a tunnel interface.`);
+				isValid = false;
+			}
+		}
+
+		// Handle hybrid nodes
+		if (node.type === "hybrid" && node.hybridRoles) {
+			// If hybrid has controller role, it cannot have tunnel interface
+			if (node.hybridRoles.controller && node.tunnelNic?.ip) {
+				details.push(`Hybrid node ${node.hostname} with controller role cannot have a tunnel interface.`);
+				isValid = false;
+			}
+
+			// If hybrid has compute role, it must have tunnel interface and cannot have external interface
+			if (node.hybridRoles.compute) {
+				if (!node.tunnelNic?.ip) {
+					details.push(`Hybrid node ${node.hostname} with compute role must have a tunnel interface.`);
+					isValid = false;
+				}
+				if (node.externalNic?.ip) {
+					details.push(`Hybrid node ${node.hostname} with compute role cannot have an external interface.`);
+					isValid = false;
+				}
+			}
+
+			// If hybrid has network role, it must have tunnel interface
+			if (node.hybridRoles.network && !node.tunnelNic?.ip) {
+				details.push(`Hybrid node ${node.hostname} with network role must have a tunnel interface.`);
+				isValid = false;
+			}
+
+			// If hybrid has storage role, it must have tunnel interface
+			if (node.hybridRoles.storage && !node.tunnelNic?.ip) {
+				details.push(`Hybrid node ${node.hostname} with storage role must have a tunnel interface.`);
+				isValid = false;
+			}
+		}
+
+		// Check that external and VIP external interfaces are different
+		if (node.externalNic?.name && node.vipExternalNic?.name) {
+			if (node.externalNic.name === node.vipExternalNic.name) {
+				details.push(`Node ${node.hostname}: External interface and VIP external interface cannot be the same.`);
+				isValid = false;
+			}
+		}
+
+		// Validate that VIP external interface doesn't have a specific IP (should be configured via network config)
+		if (node.vipExternalNic?.ip && node.vipExternalNic.ip.trim() !== "") {
+			details.push(`Node ${node.hostname}: VIP external interface should not have a specific IP address. Use network configuration instead.`);
 			isValid = false;
 		}
 	}

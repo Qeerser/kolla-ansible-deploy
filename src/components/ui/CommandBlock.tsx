@@ -60,14 +60,15 @@ const CommandBlock: React.FC<CommandBlockProps> = ({ commands, title, index, onC
 				}
 				return cmd;
 			})
-			.filter((cmd) => 
-				!cmd.startsWith("#") && 
-				!cmd.startsWith("//") && 
-				!cmd.startsWith("...") &&
-				!cmd.includes("outputs") &&
-				!cmd.includes("press enter") &&
-				cmd.trim() !== "" &&
-				!cmd.includes("info and status")
+			.filter(
+				(cmd) =>
+					!cmd.startsWith("#") &&
+					!cmd.startsWith("//") &&
+					!cmd.startsWith("...") &&
+					!cmd.includes("outputs") &&
+					!cmd.includes("press enter") &&
+					cmd.trim() !== "" &&
+					!cmd.includes("info and status")
 			)
 			.join("\n");
 	};
@@ -80,12 +81,14 @@ const CommandBlock: React.FC<CommandBlockProps> = ({ commands, title, index, onC
 					const parts = cmd.split("$ ");
 					const command = parts.slice(1).join("$ ");
 					// Skip test commands and display commands
-					if (command.startsWith("cat ") || 
-						command.startsWith("ls ") || 
+					if (
+						command.startsWith("cat ") ||
+						command.startsWith("ls ") ||
 						command.startsWith("groups ") ||
 						command.startsWith("grep ") ||
 						command.includes("lsb_release") ||
-						command.includes("uname")) {
+						command.includes("uname")
+					) {
 						return "";
 					}
 					return command;
