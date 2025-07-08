@@ -163,7 +163,7 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 		// Handle hybrid nodes
 		if (node.type === "hybrid" && node.hybridRoles) {
 			const hasOtherRoles = node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage;
-			
+
 			// If hybrid has ONLY controller role, it cannot have tunnel interface
 			if (node.hybridRoles.controller && !hasOtherRoles && node.tunnelNic?.ip) {
 				details.push(`Hybrid node ${node.hostname} with only controller role cannot have a tunnel interface.`);
@@ -172,7 +172,9 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 
 			// If hybrid has controller AND other roles, it must have tunnel interface for the other roles
 			if (node.hybridRoles.controller && hasOtherRoles && !node.tunnelNic?.ip) {
-				details.push(`Hybrid node ${node.hostname} with controller and other roles must have a tunnel interface for non-controller services.`);
+				details.push(
+					`Hybrid node ${node.hostname} with controller and other roles must have a tunnel interface for non-controller services.`
+				);
 				isValid = false;
 			}
 

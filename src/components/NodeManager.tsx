@@ -120,7 +120,10 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 			if (role === "controller") {
 				if (enabled) {
 					// If controller role is enabled, check if other roles exist
-					const hasOtherRoles = updatedNode.hybridRoles.network || updatedNode.hybridRoles.compute || updatedNode.hybridRoles.storage;
+					const hasOtherRoles =
+						updatedNode.hybridRoles.network ||
+						updatedNode.hybridRoles.compute ||
+						updatedNode.hybridRoles.storage;
 					if (!hasOtherRoles) {
 						// If ONLY controller role, remove tunnel interface
 						delete updatedNode.tunnelNic;
@@ -177,7 +180,8 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 			}
 
 			// Final check: If ONLY controller role is enabled, remove tunnel interface
-			const hasOtherRoles = updatedNode.hybridRoles.network || updatedNode.hybridRoles.compute || updatedNode.hybridRoles.storage;
+			const hasOtherRoles =
+				updatedNode.hybridRoles.network || updatedNode.hybridRoles.compute || updatedNode.hybridRoles.storage;
 			if (updatedNode.hybridRoles.controller && !hasOtherRoles) {
 				delete updatedNode.tunnelNic;
 			}
@@ -393,34 +397,37 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						)}
 
 					{/* Warning for controller constraints */}
-					{(node.type === "controller" || 
-						(node.type === "hybrid" && 
-							node.hybridRoles?.controller && 
+					{(node.type === "controller" ||
+						(node.type === "hybrid" &&
+							node.hybridRoles?.controller &&
 							!(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))) &&
 						node.tunnelNic?.ip && (
 							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
 								<div className="flex items-center">
 									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
 									<p className="text-sm text-red-800">
-										<strong>Error:</strong> {node.type === "controller" 
-											? "Controller nodes cannot have tunnel interfaces." 
-											: "Hybrid nodes with only controller role cannot have tunnel interfaces."} This
-										will cause deployment validation to fail.
+										<strong>Error:</strong>{" "}
+										{node.type === "controller"
+											? "Controller nodes cannot have tunnel interfaces."
+											: "Hybrid nodes with only controller role cannot have tunnel interfaces."}{" "}
+										This will cause deployment validation to fail.
 									</p>
 								</div>
 							</div>
 						)}
 
 					{/* Warning for hybrid controller + other roles needing tunnel */}
-					{(node.type === "hybrid" && 
-						node.hybridRoles?.controller && 
+					{node.type === "hybrid" &&
+						node.hybridRoles?.controller &&
 						(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage) &&
-						!node.tunnelNic?.ip) && (
+						!node.tunnelNic?.ip && (
 							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
 								<div className="flex items-center">
 									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
 									<p className="text-sm text-red-800">
-										<strong>Error:</strong> Hybrid nodes with controller and other roles must have tunnel interfaces for non-controller services. This will cause deployment validation to fail.
+										<strong>Error:</strong> Hybrid nodes with controller and other roles must have
+										tunnel interfaces for non-controller services. This will cause deployment
+										validation to fail.
 									</p>
 								</div>
 							</div>
@@ -550,7 +557,7 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 									node.hybridRoles.storage
 								))) && (
 							<p className="text-xs text-gray-500 mt-1">
-								{node.type === "controller" 
+								{node.type === "controller"
 									? "Controller nodes cannot have tunnel interfaces"
 									: "Hybrid nodes with only controller role cannot have tunnel interfaces"}
 							</p>

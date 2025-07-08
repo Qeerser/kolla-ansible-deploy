@@ -320,17 +320,19 @@ export class SpecificationService {
 			}
 			if (node.type === "hybrid" && node.hybridRoles) {
 				const hasOtherRoles = node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage;
-				
+
 				// If hybrid has ONLY controller role, it cannot have tunnel interface
 				if (node.hybridRoles.controller && !hasOtherRoles && node.tunnelNic) {
 					invalidNodes.push(`${node.hostname} (hybrid with only controller role has tunnel interface)`);
 				}
-				
+
 				// If hybrid has controller AND other roles, it must have tunnel interface
 				if (node.hybridRoles.controller && hasOtherRoles && !node.tunnelNic) {
-					invalidNodes.push(`${node.hostname} (hybrid with controller and other roles missing tunnel interface)`);
+					invalidNodes.push(
+						`${node.hostname} (hybrid with controller and other roles missing tunnel interface)`
+					);
 				}
-				
+
 				// If hybrid has other roles (non-controller), it must have tunnel interface
 				if (hasOtherRoles && !node.tunnelNic) {
 					invalidNodes.push(`${node.hostname} (hybrid with roles requiring tunnel interface)`);
