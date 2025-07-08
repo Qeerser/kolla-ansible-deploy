@@ -253,6 +253,7 @@ export class SpecificationService {
 			"Enable container runtime (Docker) on all nodes before deployment",
 			"⚠️  Interface Constraints: Controller nodes cannot have tunnel interfaces (unless hybrid with other roles)",
 			"⚠️  Interface Constraints: Compute nodes cannot have external interfaces",
+			"⚠️  Interface Constraints: Only network nodes (or hybrid with network role) can have external interfaces",
 			"⚠️  Interface Constraints: Network/Compute/Storage nodes require tunnel interfaces",
 			"⚠️  Interface Constraints: Hybrid nodes with controller + other roles require tunnel interfaces",
 			"⚠️  Interface Constraints: Each node must use unique interface names (no duplicate ens3, ens4, etc.)",
@@ -330,11 +331,20 @@ export class SpecificationService {
 			if (node.type === "controller" && node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (controller with tunnel interface)`);
 			}
+			if (node.type === "controller" && node.externalNic) {
+				invalidNodes.push(`${node.hostname} (controller with external interface - only network nodes allowed)`);
+			}
+			if (node.type === "storage" && node.externalNic) {
+				invalidNodes.push(`${node.hostname} (storage with external interface - only network nodes allowed)`);
+			}
 			if (
 				(node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) &&
 				node.externalNic
 			) {
 				invalidNodes.push(`${node.hostname} (compute with external interface)`);
+			}
+			if (node.type === "hybrid" && node.externalNic && node.hybridRoles && !node.hybridRoles.network) {
+				invalidNodes.push(`${node.hostname} (hybrid with external interface but no network role)`);
 			}
 			if ((node.type === "network" || node.type === "compute" || node.type === "storage") && !node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (${node.type} without tunnel interface)`);

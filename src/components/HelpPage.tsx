@@ -37,7 +37,7 @@ const HelpPage: React.FC = () => {
 									<strong>Required:</strong> Management NIC
 								</p>
 								<p>
-									<strong>Optional:</strong> External NIC for dashboard access
+									<strong>Cannot have:</strong> External NIC (only network nodes can)
 								</p>
 								<p>
 									<strong>Services:</strong> Database, Message Queue, API endpoints
@@ -59,6 +59,9 @@ const HelpPage: React.FC = () => {
 								</p>
 								<p>
 									<strong>Optional:</strong> External NIC for floating IPs
+								</p>
+								<p>
+									<strong>Note:</strong> Only network nodes can have external interfaces
 								</p>
 								<p>
 									<strong>Services:</strong> Neutron agents, OVS bridges
@@ -213,6 +216,27 @@ const HelpPage: React.FC = () => {
 								<p className="mt-2">
 									<strong>Note:</strong> Interface names like ens3, ens4, ens5 must be unique within
 									each node
+								</p>
+							</div>
+						</div>
+
+						<div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+							<h4 className="font-semibold text-lg mb-2 text-orange-700">
+								External Interface Restriction
+							</h4>
+							<p className="text-gray-700 text-sm mb-2">
+								Only network nodes (or hybrid nodes with network role) can have external interfaces
+							</p>
+							<div className="text-sm text-orange-700">
+								<p>
+									<strong>✅ Can have external:</strong> Network nodes, Hybrid with network role
+								</p>
+								<p>
+									<strong>❌ Cannot have external:</strong> Controller, Compute, Storage nodes
+								</p>
+								<p>
+									<strong>Reason:</strong> External interfaces provide floating IP and external
+									network access
 								</p>
 							</div>
 						</div>

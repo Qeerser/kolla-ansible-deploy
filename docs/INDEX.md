@@ -8,6 +8,7 @@ This folder contains all the project documentation files for the Kolla OpenStack
 -   **[REFACTORING_SUMMARY.md](./REFACTORING_SUMMARY.md)** - Initial refactoring documentation and approach
 -   **[CONSTRAINT_IMPLEMENTATION_SUMMARY.md](./CONSTRAINT_IMPLEMENTATION_SUMMARY.md)** - Complete summary of all constraint implementations
 -   **[INTERFACE_NAME_CONSTRAINT.md](./INTERFACE_NAME_CONSTRAINT.md)** - Interface name uniqueness constraint implementation
+-   **[EXTERNAL_INTERFACE_NETWORK_ONLY_CONSTRAINT.md](./EXTERNAL_INTERFACE_NETWORK_ONLY_CONSTRAINT.md)** - External interface restriction to network nodes only
 
 ## 🔄 Version Upgrades & Changes
 

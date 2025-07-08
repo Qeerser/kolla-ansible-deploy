@@ -25,6 +25,13 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 		return interfaces.some((item) => item.nic!.name === interfaceName);
 	};
 
+	// Helper function to check if node can have external interface (only network nodes or hybrid with network role)
+	const canHaveExternalInterface = (node: Node): boolean => {
+		if (node.type === "network") return true;
+		if (node.type === "hybrid" && node.hybridRoles?.network) return true;
+		return false;
+	};
+
 	const updateNodeField = (nodeId: string, field: keyof Node, value: string | Node["type"]) => {
 		const node = nodes.find((n) => n.id === nodeId);
 		if (node) {
@@ -51,14 +58,11 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 				// Clean up based on new type and enforce constraints
 				switch (newType) {
 					case "controller":
-						// Controllers cannot have tunnel interface or external interface with IP
+						// Controllers cannot have tunnel interface or external interface
 						delete updatedNode.tunnelNic;
+						delete updatedNode.externalNic;
 						delete updatedNode.storageDisks;
 						delete updatedNode.hybridRoles;
-						// Clear external NIC IP if it exists but keep the interface
-						if (updatedNode.externalNic) {
-							updatedNode.externalNic.ip = "";
-						}
 						break;
 					case "network":
 						// Keep management, tunnel, and external NICs
@@ -74,9 +78,11 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						delete updatedNode.hybridRoles;
 						break;
 					case "storage":
-						// Keep management and tunnel NICs, add storage disks if not exist
+						// Storage nodes cannot have external interface
+						delete updatedNode.externalNic;
 						delete updatedNode.vipExternalNic;
 						delete updatedNode.hybridRoles;
+						// Add storage disks if not exist
 						if (!updatedNode.storageDisks) {
 							updatedNode.storageDisks = [
 								{
@@ -167,6 +173,9 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						const tunnelIP = generateNextAvailableIP("hybrid", "tunnel", networkConfig, nodes);
 						updatedNode.tunnelNic = { id: Date.now().toString(), name: "ens4", ip: tunnelIP };
 					}
+				} else {
+					// If network role is disabled, remove external interface (only network nodes can have it)
+					delete updatedNode.externalNic;
 				}
 			}
 
@@ -600,76 +609,60 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						)}
 					</div>
 
-					{/* External NIC */}
-					<div className="mb-4">
-						<div className="flex items-center justify-between mb-2">
-							<h4 className="text-md font-medium text-gray-700">External Network Interface</h4>
-							{!node.externalNic ? (
-								<button
-									onClick={() => addNic(node.id, "externalNic")}
-									disabled={
-										node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)
-									}
-									className={`text-sm ${
-										node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)
-											? "text-gray-400 cursor-not-allowed"
-											: "text-blue-500 hover:text-blue-700"
-									}`}
-								>
-									Add External NIC
-								</button>
-							) : (
-								<button
-									onClick={() => removeNic(node.id, "externalNic")}
-									className="text-red-500 hover:text-red-700 text-sm"
-								>
-									Remove
-								</button>
-							)}
-						</div>
-						{node.externalNic && (
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-								<div>
+					{/* External NIC - Only for network nodes or hybrid with network role */}
+					{canHaveExternalInterface(node) && (
+						<div className="mb-4">
+							<div className="flex items-center justify-between mb-2">
+								<h4 className="text-md font-medium text-gray-700">External Network Interface</h4>
+								{!node.externalNic ? (
+									<button
+										onClick={() => addNic(node.id, "externalNic")}
+										className="text-blue-500 hover:text-blue-700 text-sm"
+									>
+										Add External NIC
+									</button>
+								) : (
+									<button
+										onClick={() => removeNic(node.id, "externalNic")}
+										className="text-red-500 hover:text-red-700 text-sm"
+									>
+										Remove
+									</button>
+								)}
+							</div>
+							{node.externalNic && (
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div>
+										<input
+											type="text"
+											value={node.externalNic.name}
+											onChange={(e) =>
+												updateNicField(node.id, "externalNic", "name", e.target.value)
+											}
+											className={`input-field ${
+												isInterfaceNameDuplicate(node, "external", node.externalNic.name)
+													? "border-red-500 bg-red-50"
+													: ""
+											}`}
+											placeholder="NIC name (e.g., ens5)"
+										/>
+										{isInterfaceNameDuplicate(node, "external", node.externalNic.name) && (
+											<p className="text-xs text-red-600 mt-1">
+												Interface name already used on this node
+											</p>
+										)}
+									</div>
 									<input
 										type="text"
-										value={node.externalNic.name}
-										onChange={(e) => updateNicField(node.id, "externalNic", "name", e.target.value)}
-										className={`input-field ${
-											isInterfaceNameDuplicate(node, "external", node.externalNic.name)
-												? "border-red-500 bg-red-50"
-												: ""
-										}`}
-										placeholder="NIC name (e.g., ens5)"
+										value={node.externalNic.ip}
+										onChange={(e) => updateNicField(node.id, "externalNic", "ip", e.target.value)}
+										className="input-field"
+										placeholder="IP address (optional)"
 									/>
-									{isInterfaceNameDuplicate(node, "external", node.externalNic.name) && (
-										<p className="text-xs text-red-600 mt-1">
-											Interface name already used on this node
-										</p>
-									)}
 								</div>
-								<input
-									type="text"
-									value={node.externalNic.ip}
-									onChange={(e) => updateNicField(node.id, "externalNic", "ip", e.target.value)}
-									className="input-field"
-									placeholder="IP address (optional)"
-									disabled={
-										node.type === "controller" ||
-										(node.type === "hybrid" && node.hybridRoles?.controller)
-									}
-								/>
-							</div>
-						)}
-						{(node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) && (
-							<p className="text-xs text-gray-500 mt-1">Compute nodes cannot have external interfaces</p>
-						)}
-						{(node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller)) &&
-							node.externalNic && (
-								<p className="text-xs text-gray-500 mt-1">
-									Controller external interfaces should not have static IPs (configured via VIP)
-								</p>
 							)}
-					</div>
+						</div>
+					)}
 
 					{/* VIP External NIC - Only for controller nodes and hybrid nodes with controller role */}
 					{(node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller)) && (
