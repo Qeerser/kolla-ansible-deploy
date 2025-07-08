@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Helper web page for OpenStack Installation using Kolla Ansible: Type 4</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header h2 {
+            color: #4a5568;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        canvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        input {
+            position: absolute;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .verification-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .verification-result {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .verification-result strong {
+            font-size: 18px;
+            color: #4a5568;
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .status-pass {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-fail {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .details-toggle {
+            background: none;
+            border: none;
+            color: #4299e1;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            padding: 5px 0;
+        }
+        
+        #result {
+            margin-top: 15px;
+            font-weight: 500;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .tutorial-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .tutorial-section h4 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+        
+        .tutorial-step {
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .step-header {
+            background: #f7fafc;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .step-content {
+            padding: 20px;
+        }
+        
+        .code-block {
+            position: relative;
+            margin: 15px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .code-header {
+            background: #2d3748;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .copy-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: #38a169;
+        }
+        
+        pre {
+            background: #1a202c !important;
+            color: #e2e8f0 !important;
+            padding: 20px !important;
+            margin: 0 !important;
+            font-family: 'Courier New', Monaco, monospace !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            overflow-x: auto;
+            white-space: pre;
+            border: none !important;
+            max-width: none !important;
+            width: 100% !important;
+        }
+        
+        .m-div {
+            max-width: 100%;
+            line-height: 1.6;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .info-section details {
+            margin-bottom: 20px;
+        }
+        
+        .info-section summary {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .info-section summary:hover {
+            background: #edf2f7;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: #2d3748;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f7fafc;
+        }
+        
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: #4a5568;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .footer a {
+            color: #4299e1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h2 {
+                font-size: 2em;
+            }
+            
+            canvas {
+                transform: scale(0.8);
+                transform-origin: top left;
+            }
+            
+            input {
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2><i class="fas fa-cloud"></i> Kolla OpenStack Installation Helper</h2>
+        <p style="text-align: center; color: #666; font-size: 1.1em;">Classic 4 Nodes Configuration</p>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="myCanvas" width="1200" height="500"></canvas>
+        <input type="text" id="manCidr" placeholder="Management Subnet" style="top: 80px; left: 550px; width: 200px;">
+
+        <input type="text" id="con01ManNic" placeholder="Con01 Man NIC" style="top: 170px; left: 130px; width: 120px;">
+        <input type="text" id="con01ManIp" placeholder="Con01 Man IP" style="top: 195px; left: 130px; width: 145px;">
+
+        <input type="text" id="net01ManNic" placeholder="Net01 Man NIC" style="top: 170px; left: 420px; width: 120px;">
+        <input type="text" id="net01ManIp" placeholder="Net01 Man IP" style="top: 195px; left: 420px; width: 145px;">
+
+        <input type="text" id="com01ManNic" placeholder="Com01 Man NIC" style="top: 170px; left: 710px; width: 120px;">
+        <input type="text" id="com01ManIp" placeholder="Com01 Man IP" style="top: 195px; left: 710px; width: 145px;">
+
+        <input type="text" id="com02ManNic" placeholder="Com02 Man NIC" style="top: 170px; left: 1000px; width: 120px;">
+        <input type="text" id="com02ManIp" placeholder="Com02 Man IP" style="top: 195px; left: 1000px; width: 145px;">
+
+        <input type="text" id="controller01" placeholder="controller01" style="top: 245px; left: 130px; width: 145px;">
+        <input type="text" id="network01" placeholder="network01" style="top: 245px; left: 420px; width: 145px;">
+        <input type="text" id="compute01" placeholder="compute01" style="top: 245px; left: 710px; width: 145px;">
+        <input type="text" id="compute02" placeholder="compute02" style="top: 245px; left: 1000px; width: 145px;">
+
+        <input type="text" id="kollaUser" placeholder="Kolla User" style="top: 275px; left: 130px; width: 145px;">
+        <input type="text" id="kollaIntVipAddr" placeholder="Internal VIP address" style="top: 305px; left: 130px; width: 145px;">
+
+        <input type="text" id="tunSubnetCidr" placeholder="Data Tunnel Subnet" style="top: 392px; left: 785px; width: 200px;">
+
+        <input type="text" id="net01TunNic" placeholder="Net01 Tun NIC" style="top: 293px; left: 420px; width: 120px;">
+        <input type="text" id="net01TunIp" placeholder="Net01 Tun IP" style="top: 318px; left: 420px; width: 145px;">
+
+        <input type="text" id="com01TunNic" placeholder="Com01 Tun NIC" style="top: 293px; left: 710px; width: 120px;">
+        <input type="text" id="com01TunIp" placeholder="Com01 Tun IP" style="top: 318px; left: 710px; width: 145px;">
+
+        <input type="text" id="com02TunNic" placeholder="Com02 Tun NIC" style="top: 293px; left: 1000px; width: 120px;">
+        <input type="text" id="com02TunIp" placeholder="Com02 Tun IP" style="top: 318px; left: 1000px; width: 145px;">
+
+        <input type="text" id="extSubnetCidr" placeholder="External Net Subnet" style="top: 460px; left: 797px; width: 200px;">
+        <input type="text" id="con01ExtNic" placeholder="Con01 Ext NIC" style="top: 382px; left: 130px; width: 120px;">
+        <input type="text" id="net01ExtNic" placeholder="Net01 Ext NIC" style="top: 416px; left: 420px; width: 120px;">
+        <input type="text" id="extGatewayIp" placeholder="ExtGateway IP" style="top: 512px; left: 300px; width: 145px;">
+        <input type="text" id="extStartIp" placeholder="Ext Start IP" style="top: 512px; left: 535px; width: 145px;">
+        <input type="text" id="extEndIp" placeholder="Ext End IP" style="top: 512px; left: 770px; width: 145px;">
+    </div>
+
+    <button class="generate-btn" onclick="generateScript()">
+        <i class="fas fa-cogs"></i> Generate Tutorial
+    </button>
+
+    <div class="verification-section">
+        <div class="verification-result">
+            <strong>Network Verification Results:</strong>
+            <div id="verResult"></div>
+        </div>
+        <details>
+            <summary class="details-toggle">Click to view verification details</summary>
+            <div id="result"></div>
+        </details>
+    </div>
+
+    <div id="tutorial" class="hidden tutorial-section">
+        <h4><i class="fas fa-graduation-cap"></i> เว็บเพจสำหรับช่วยติดตั้งระบบ OpenStack แบบ 4 โหนดด้วย Kolla Ansible</h4>
+        <ol>
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 1: ตรวจสอบความพร้อมของเครื่องโฮสต์</div>
+                <div class="step-content">
+                    <div id="tutor1Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-terminal"></i> Host Preparation Commands</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script1Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script1Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 2: ติดตั้ง Python</div>
+                <div class="step-content">
+                    <div id="tutor2Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fab fa-python"></i> Python Installation</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script2Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script2Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 3: สร้างและกระจาย SSH Keys</div>
+                <div class="step-content">
+                    <div id="tutor3Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-key"></i> SSH Configuration</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script3Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script3Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 4: สร้าง Virtual Environment</div>
+                <div class="step-content">
+                    <div id="tutor4Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-box"></i> Virtual Environment Setup</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script4Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script4Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 5: ติดตั้ง Ansible</div>
+                <div class="step-content">
+                    <div id="tutor5Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-cog"></i> Ansible Installation</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script5Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script5Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 6: ติดตั้ง Kolla Ansible</div>
+                <div class="step-content">
+                    <div id="tutor6Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-download"></i> Kolla Ansible Installation</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script6Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script6Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 7: กำหนดค่า Global Configuration</div>
+                <div class="step-content">
+                    <div id="tutor7Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-edit"></i> Global Configuration</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script7Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script7Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 8: กำหนดค่า Multinode Inventory</div>
+                <div class="step-content">
+                    <div id="tutor8Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-network-wired"></i> Multinode Configuration</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script8Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script8Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 9: สร้าง LVM Volumes</div>
+                <div class="step-content">
+                    <div id="tutor9Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-database"></i> Storage Configuration</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script9Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script9Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 10: สร้าง Passwords</div>
+                <div class="step-content">
+                    <div id="tutor10Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-lock"></i> Password Generation</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script10Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script10Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 11: ติดตั้ง Dependencies</div>
+                <div class="step-content">
+                    <div id="tutor11Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-puzzle-piece"></i> Dependencies Installation</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script11Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script11Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 12: Deploy OpenStack</div>
+                <div class="step-content">
+                    <div id="tutor12Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-rocket"></i> OpenStack Deployment</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script12Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script12Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 13 Part 1: ตรวจสอบสถานะ</div>
+                <div class="step-content">
+                    <div id="tutor13p1Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-search"></i> Status Check Part 1</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script13p1Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script13p1Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 13 Part 2: ตรวจสอบสถานะ (ต่อ)</div>
+                <div class="step-content">
+                    <div id="tutor13p2Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-search"></i> Status Check Part 2</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script13p2Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script13p2Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 14: ติดตั้ง OpenStack Client</div>
+                <div class="step-content">
+                    <div id="tutor14Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-terminal"></i> Client Installation</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script14Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script14Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 15: รัน Initial Setup</div>
+                <div class="step-content">
+                    <div id="tutor15Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-play"></i> Initial Setup</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script15Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script15Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 16: เข้าสู่ OpenStack Dashboard</div>
+                <div class="step-content">
+                    <div id="tutor16Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-key"></i> Dashboard Access</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script16Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script16Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 17: External Network Access (Optional)</div>
+                <div class="step-content">
+                    <div id="tutor17Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-globe"></i> External Network</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script17Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script17Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+
+            <li><div class="tutorial-step">
+                <div class="step-header">Step 18: Reconfigure OpenStack</div>
+                <div class="step-content">
+                    <div id="tutor18Output" class="m-div"></div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span><i class="fas fa-redo"></i> Reconfiguration</span>
+                            <button class="copy-btn" onclick="copyToClipboard('script18Output')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="script18Output"></pre>
+                    </div>
+                </div>
+            </div></li>
+        </ol>
+
+        <div id="finalOutput" class="m-div" style="margin-top: 30px; padding: 20px; background: #f7fafc; border-radius: 12px; border-left: 4px solid #4299e1;"></div>
+    </div>
+
+    <div class="info-section">
+        <details>
+            <summary><b><u>กด</u></b>เพื่อดูข้อความอธิบายการใช้งาน</summary>
+<p>
+เว็บเพจ helper เพื่อแนะแนวการติดตั้งระบบโอเพ่นสแตคด้วยซอฟต์แวร์ <a href="https://docs.openstack.org/kolla-ansible/latest/">kolla-ansible</a>
+โดยมีสมมุติฐานดังนี้ 
+<ol>
+<li>ผู้อ่านใช้เครื่องโฮสต์ 4 เครื่องที่มีระบบเครือข่ายเชื่อมต่อกันดังแผนภาพข้างต้น 
+<li>ผู้อ่านต้องการติดตั้งระบบโอเพ่นสแตคแบบมี
+เครื่อง controller node 1 เครื่อง ใช้เครื่อง network node 1 เครื่องแยกการสื่อสารข้อมูลจากการประมวลผลของส่วนประกอบอื่นของระบบ 
+<li>มีเครื่อง compute node 2 เครื่อง และใช้หนึ่งใน 2 เครื่องนั้นเป็นเครื่อง storage node เพื่อสร้างบล็อคสตอเรจเสมือน
+<li>กำหนดให้วีเอ็มเชื่อมต่อกับระบบเครือข่ายเสมือนภายใน และสื่อสารกับระบบเครือข่ายภายนอกผ่านเร้าเตอร์เสมือนเท่านั้น และ
+<li>ไม่รองรับการเชื่อมต่อวีเอ็มโดยตรงกับ Provider Network และ ไม่รองรับ Distributed Virtual Router 
+</ol>
+<p>
+เครื่องโฮสต์ที่ใช้มี Specification ขั้นต่ำดังนี้ 
+<table border=""1">
+  <tr><th>Name</th><th>CPU core</th><th>Ram</th><th>Storage</th><th>Nic</th></tr>
+  <tr><td>controller01</td><td>6</td><td>16G</td><td>80G</td><td>2</td></tr>
+  <tr><td>network01</td><td>4</td><td>10G</td><td>80G</td><td>3</td></tr>
+  <tr><td>compute01</td><td>6</td><td>16G</td><td>100G,80G(for cinder)</td><td>2</td></tr>
+  <tr><td>compute01</td><td>6</td><td>16G</td><td>100G,80G</td><td>2</td></tr>
+</table>
+<p>
+หมายเหตุ: ผู้เขียนสร้างวีเอ็มโดยใช้ซอฟต์แวร์ qemu-kvm และ cloud-init และใช้วีเอ็มเหล่านั้นเป็นเครื่องโฮสต์ 
+ผู้อ่านสามารถดาวร์โหลด script สำหรับสร้างวีเอ็มเหล่านี้ได้ที่ 
+<a href="kolla-hosts.tar">kolla-hosts.tar</a>
+</p>
+ในการใช้งานเว็บเพจ helper นี้ ผู้อ่านต้องเติมค่าในช่องว่างในภาพทุกช่อง ซึ่งแต่ละช่องมีความหมายต่อไปนี้
+<p>
+<table border="1px">
+<tr>
+  <th>ชื่อ</th>
+  <th>ความหมาย</th>
+</tr>
+<tr>
+  <td>
+    Management Net CIDR:
+  </td>
+  <td>
+    Subnet (แบบ CIDR) ของ Management Network 
+  </td>
+</tr>
+<tr>
+  <td>
+    Nic01:
+  </td>
+  <td>
+    ชื่อ Network Interface Card (NIC) ที่เชื่อมต่อกับ Management Network ของเครื่องโฮสต์แต่ละเครื่อง
+  </td>
+</tr>
+<tr>
+  <td>
+    IP 01:
+  </td>
+  <td>
+    ชื่อ IP address ที่เชื่อมต่อ Management Network ของเครื่องโฮสต์แต่ละเครื่อง
+  </td>
+</tr>
+<tr>
+  <td>
+    Host: 
+  </td>
+  <td>
+    ชื่อของเครื่องโฮสต์
+  </td>
+</tr>
+<tr>
+  <td>
+    User: 
+  </td>
+  <td>
+    ชื่อบัญชีผู้ใช้สำหรับติดตัั้งระบบโอเพ่นสแตคด้วย kolla-ansible กำหนดให้ใช้ชื่อเดียวกันทุกเคร่ื่อง
+  </td>
+</tr>
+<tr>
+  <td>
+    VIP IP:
+  </td>
+  <td>
+    ค่า IP Address สำหรับเข้าถึง Web Interfaces และ API ของโอเพ่นสแตค
+  </td>
+</tr>
+<tr>
+  <td>
+    Nic 02: (บน controller)   
+  </td>
+  <td>
+    ชื่อ NIC สำหรับเชื่อมต่อกับ external network 
+    เพื่อทดสอบว่าผู้ใช้สามารถเข้าถึงวีเอ็มในระบบโอเพ่นสแตคจากเครื่อง controller ได้ ค่านี้เป็นทางเลือก (Optional) 
+    ที่ผู้ติดตั้งเลือกที่จะใส่ค่าชื่อ NIC หรือไม่ใส่ก็ได้
+  </td>
+</tr>
+<tr>
+  <td>
+    Nic 02: (บน network และ compute โฮสต์) 
+  </td>
+  <td>
+    ชื่อ NIC ที่เชื่อมต่อกับ Tunnel Network
+  </td>
+</tr>
+<tr>
+  <td>
+    IP 02: (บน network และ compute โฮสต์)  
+  </td>
+  <td>
+    IP Address ของ NIC ทีเชื่อมต่อกับ Tunnel Network่
+  </td>
+</tr>
+<tr>
+  <td>
+    Tunnel Net CIDR:
+  </td>
+  <td>
+    Subnet (แบบ CIDR) ของ Tunnel Network
+  </td>
+</tr>
+<tr>
+  <td>
+    Nic 03: (บน network โฮสต์)  
+  </td>
+  <td>
+    ชื่อ NIC ที่เชื่อมต่อกับ External Network 
+  </td>
+</tr>
+<tr>
+  <td>
+    External Network CIDR: 
+  </td>
+  <td>
+    Subnet (แบบ CIDR) ของ External Network
+  </td>
+</tr>
+<tr>
+  <td>
+    Ext Net Gateway: 
+  </td>
+  <td>
+    IP Address ของ Router Gateway ของ External network
+  </td>
+</tr>
+<tr>
+  <td>
+    StartIP
+  </td>
+  <td>
+    IP Address แรกบน External Network ที่ผู้ดูแลระบบจัดสรรให้ระบบโอเพ่นสแตคใช้เป็น Floating IP 
+  </td>
+</tr>
+<tr>
+  <td>
+    EndIP
+  </td>
+  <td>
+    IP Address สุดท้ายบน External Network ที่ผู้ดูแลระบบจัดสรรให้ระบบโอเพ่นสแตคใช้เป็น Floating IP 
+  </td>
+</tr>
+</table>
+<p>
+<ul>
+<li><a href="https://youtu.be/kHb9QgPDA78">วิดีโอแสดงตัวอย่างการใช้งาน helper เว็บเพจนี้</a>
+<li><a href="https://vasabilab.github.io/">เว็บไซต์ vasabilab</a>
+</ul>
+        </details>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2024 Kasidit Chanchio. All rights reserved.</p>
+        <p><a href="https://vasabilab.github.io/"><i class="fas fa-globe"></i> vasabilab.github.io</a></p>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        const text = element.textContent;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            // Find the copy button for this element
+            const copyBtn = event.target.closest('.copy-btn');
+            const originalText = copyBtn.innerHTML;
+            
+            // Show success feedback
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            copyBtn.classList.add('copied');
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const copyBtn = event.target.closest('.copy-btn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+    function generateScript() {
+        // Get values from input fields
+        var manSubnetCidr = document.getElementById('manCidr').value;
+        var con01ManNic = document.getElementById('con01ManNic').value;
+        var con01ManIp = document.getElementById('con01ManIp').value;
+        var net01ManNic = document.getElementById('net01ManNic').value;
+        var net01ManIp = document.getElementById('net01ManIp').value;
+        var com01ManNic = document.getElementById('com01ManNic').value;
+        var com01ManIp = document.getElementById('com01ManIp').value;
+        var com02ManNic = document.getElementById('com02ManNic').value;
+        var com02ManIp = document.getElementById('com02ManIp').value;
+
+        var controller01 = document.getElementById('controller01').value;
+        var network01 = document.getElementById('network01').value;
+        var compute01 = document.getElementById('compute01').value;
+        var compute02 = document.getElementById('compute02').value;
+
+        var kollaUser = document.getElementById('kollaUser').value;
+        var kollaIntVipAddr = document.getElementById('kollaIntVipAddr').value;
+
+        var tunSubnetCidr = document.getElementById('tunSubnetCidr').value;
+        var net01TunNic = document.getElementById('net01TunNic').value;
+        var net01TunIp = document.getElementById('net01TunIp').value;
+        var com01TunNic = document.getElementById('com01TunNic').value;
+        var com01TunIp = document.getElementById('com01TunIp').value;
+        var com02TunNic = document.getElementById('com02TunNic').value;
+        var com02TunIp = document.getElementById('com02TunIp').value;
+
+        var extSubnetCidr = document.getElementById('extSubnetCidr').value;
+        var net01ExtNic = document.getElementById('net01ExtNic').value;
+        var extGatewayIp = document.getElementById('extGatewayIp').value;
+        var extStartIp = document.getElementById('extStartIp').value;
+        var extEndIp = document.getElementById('extEndIp').value;
+
+        var con01ExtNic = document.getElementById('con01ExtNic').value;
+
+        const resultDiv = document.getElementById('result');
+        const verResultDiv = document.getElementById('verResult');
+
+        const tutorDiv = document.getElementById('tutor');
+
+        var outputText = "Verification Steps:"; 
+        var alltrue = true;
+
+        while(alltrue){ 
+
+
+          if (isValidCIDR(manSubnetCidr)){
+            outputText = outputText + "\n    " + manSubnetCidr + " is a valid CIDR subnet address.";
+          }
+          else{
+            outputText = outputText + "\n    " + manSubnetCidr + " is an invalid CIDR subnet address.";
+            alltrue = false; 
+            break; 
+          }
+
+          if ((con01ManNic == "")||(net01ManNic == "")||
+              (com01ManNic == "")||(com02ManNic == "")){
+            outputText = outputText + "\n    " + " Management Net Nics must not be an empty string.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " Management Net Nics are valid.";
+          }
+
+          if ((controller01 == "")||(network01 == "")||
+              (compute01 == "")||(compute02 == "")||(kollaUser == "")){
+            outputText = outputText + "\n    " + " host or user names must not be an empty string.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " host and user names are valid.";
+          }
+          
+          const [ ipNum1, flag1 ] = checkIpInSubnet(con01ManIp,manSubnetCidr);
+          if(flag1 == 1){
+            outputText = outputText + "\n    " + con01ManIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + con01ManIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          const [ ipNum2, flag2 ] = checkIpInSubnet(net01ManIp,manSubnetCidr);
+          if(flag2 == 1){
+            outputText = outputText + "\n    " + net01ManIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + net01ManIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+          
+          const [ ipNum3, flag3 ] = checkIpInSubnet(com01ManIp,manSubnetCidr);
+          if(flag3 == 1){
+            outputText = outputText + "\n    " + com01ManIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + com01ManIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          const [ ipNum4, flag4 ] = checkIpInSubnet(com02ManIp,manSubnetCidr);
+          if(flag4 == 1){
+            outputText = outputText + "\n    " + com02ManIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + com02ManIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          var ipAll = [ ipNum1, ipNum2, ipNum3, ipNum4 ];
+          const uniqIps = new Set(ipAll);
+
+          if(uniqIps.size != ipAll.length){
+            outputText = outputText + "\n    " + " Management IP of every host must be different.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " All Ips in Management Subnet are valid.";
+          }
+
+          if (isValidCIDR(tunSubnetCidr)){
+            outputText = outputText + "\n    " + tunSubnetCidr + " is a valid tunnel CIDR subnet address.";
+          }
+          else{
+            outputText = outputText + "\n    " + tunSubnetCidr + " is an invalid tunnel CIDR subnet address.";
+            alltrue = false; 
+            break; 
+          }
+
+          if ((net01TunNic == "")||
+              (com01TunNic == "")||(com02TunNic == "")){
+            outputText = outputText + "\n    " + " Tunnel Net Nics must not be an empty string.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " Tunnel Net Nics are valid.";
+          }
+
+          const [ tipNum2, tflag2 ] = checkIpInSubnet(net01TunIp,tunSubnetCidr);
+          if(tflag2 == 1){
+            outputText = outputText + "\n    " + net01TunIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + net01TunIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+          
+          const [ tipNum3, tflag3 ] = checkIpInSubnet(com01TunIp,tunSubnetCidr);
+          if(tflag3 == 1){
+            outputText = outputText + "\n    " + com01TunIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + com01TunIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          const [ tipNum4, tflag4 ] = checkIpInSubnet(com02TunIp,tunSubnetCidr);
+          if(tflag4 == 1){
+            outputText = outputText + "\n    " + com02TunIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + com02TunIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          var tipAll = [ tipNum2, tipNum3, tipNum4 ];
+          const uniqTunIps = new Set(tipAll);
+
+          if(uniqTunIps.size != tipAll.length){
+            outputText = outputText + "\n    " + " Tunnel IP of every host must be different.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " All Ips in Tunnel Subnet are valid.";
+          }
+
+
+          if (net01ExtNic == "") {
+            outputText = outputText + "\n    " + " External Net Nics must not be an empty string.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " External Net Nic is valid.";
+          }
+
+          if (isValidCIDR(extSubnetCidr)){
+            outputText = outputText + "\n    " + extSubnetCidr + " is a valid external CIDR subnet address.";
+          }
+          else{
+            outputText = outputText + "\n    " + extSubnetCidr + " is an invalid external CIDR subnet address.";
+            alltrue = false; 
+            break; 
+          }
+
+          if (net01ExtNic == ""){
+            outputText = outputText + "\n    " + " External Net Nics must not be an empty string.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " External Net Nics are valid.";
+          }
+
+          if (con01ExtNic == ""){
+            con01ExtNic = "X";
+          }
+
+          const [ eipNum1, eflag1 ] = checkIpInSubnet(extGatewayIp,extSubnetCidr);
+          if(eflag1 == 1){
+            outputText = outputText + "\n    " + extGatewayIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + extGatewayIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          const [ eipNum2, eflag2 ] = checkIpInSubnet(extStartIp,extSubnetCidr);
+          if(eflag2 == 1){
+            outputText = outputText + "\n    " + extStartIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + extStartIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          const [ eipNum3, eflag3 ] = checkIpInSubnet(extEndIp,extSubnetCidr);
+          if(eflag3 == 1){
+            outputText = outputText + "\n    " + extEndIp + " is a valid IP address.";
+          }else{
+            outputText = outputText + "\n    " + extEndIp + " is an invalid IP address.";
+            alltrue = false; 
+            break; 
+          }
+
+          var eipAll = [ eipNum1, eipNum2, eipNum3 ];
+          const uniqeIps = new Set(eipAll);
+
+          if(uniqeIps.size != eipAll.length){
+            outputText = outputText + "\n    " + " Ext gateway IP, Start IP, End IP  must be different.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " All external IPs are valid.";
+          }
+
+          if(eipNum2 > eipNum3){
+            outputText = outputText + "\n    " + " Start IP must be less or equal to End IP.";
+            alltrue = false; 
+            break; 
+          }
+          else{
+            outputText = outputText + "\n    " + " Start and End  IPs are valid.";
+          }
+
+/*
+ // test info
+
+        manSubnetCidr =     "172.16.0.0/16";
+        con01ManNic =       "ens3";
+        con01ManIp =        "172.16.38.11";
+        net01ManNic = "ens3";
+        net01ManIp =  "172.16.38.21";
+        com01ManNic = "ens3";
+        com01ManIp =  "172.16.38.31";
+        com02ManNic = "ens3";
+        com02ManIp =  "172.16.38.32";
+
+        controller01 = "controller01";
+        network01 =    "network01";
+        compute01 =    "compute01";
+        compute02 =    "compute02";
+
+        kollaUser =    "openstack";
+        kollaIntVipAddr = "172.16.38.254";
+
+        tunSubnetCidr = "10.77.0.0/24";
+        net01TunNic =   "ens4";
+        net01TunIp =    "10.77.0.21";
+        com01TunNic =   "ens4";
+        com01TunIp =    "10.77.0.31";
+        com02TunNic =   "ens4";
+        com02TunIp =    "10.77.0.32";
+
+        extSubnetCidr = "10.90.38.0/24";
+        net01ExtNic =        "ens5";
+        extGatewayIp =  "10.90.38.1";
+        extStartIp =    "10.90.38.50";
+        extEndIp =      "10.90.38.200";
+
+        con01ExtNic = "ens4";
+*/          
+          break;
+        }
+
+        const tutorial = document.getElementById('tutorial');
+
+        if(alltrue){
+          resultDiv.style.color = "green";
+          resultDiv.textContent = outputText;
+          verResultDiv.innerHTML = '<span class="status-badge status-pass"><i class="fas fa-check-circle"></i> Pass</span>';
+
+          tutorial.classList.remove('hidden');
+
+          var tutor1Content = `ตรวจสอบความพร้อมของเครื่องโฮสต์ที่จะติดตั้งระบบโอเพ่นสแตค  \n`;
+          tutor1Content = tutor1Content + `ผู้อ่านควร\n`;
+          tutor1Content = tutor1Content + `ตรวจสอบว่าระบบลินุกซ์ที่ใช้คือ Ubuntu 22.04 ซึ่งมีเคอร์เนิลแบบ Linux Generic \n`;
+          tutor1Content = tutor1Content + `แทนที่จะเป็นแบบ linux-kvm \n`;
+          tutor1Content = tutor1Content + `(เคอร์เนิลแบบ Linux-kvm เป็นแบบที่ได้รับการปรับแต่งให้รันวีเอ็มได้เร็วจึงมีการตัดบางโมดูลออก) \n`;
+          tutor1Content = tutor1Content + `ซึ่งบางโมดูลที่โอเพ่นสแตคใช้เช่น ip_vs ไม่มีอยู่ใน linux-kvm  \n\n`;
+          tutor1Content = tutor1Content + `สุดท้าย บนเครื่อง ${controller01} ผู้อ่านต้องใส่ชื่อโฮสต์ทุกเครื่องในไฟล์ /etc/hosts \n`;
+
+          document.getElementById('tutor1Output').innerHTML = tutor1Content;
+
+          var script1Content = `On every host:\n\n`;
+          var script1Content = script1Content +  `$ uname -a\n`;
+          script1Content = script1Content + `Linux ...-generic... <-- generic is recommended \n`;
+          script1Content = script1Content + `$ sudo apt update; sudo apt dist-upgrade\n`;
+          script1Content = script1Content + `$ test -f /var/run/reboot-required && sudo reboot\n`;
+          script1Content = script1Content + `\n`;
+          script1Content = script1Content + `On ${controller01} host: \n\n`;
+          script1Content = script1Content + `$ cat /etc/hosts \n ...\n`;
+          script1Content = script1Content + `${con01ManIp} ${controller01}\n`;
+          script1Content = script1Content + `${net01ManIp} ${network01}\n`;
+          script1Content = script1Content + `${com01ManIp} ${compute01}\n`;
+          script1Content = script1Content + `${com02ManIp} ${compute02}\n ...\n$`;
+
+          document.getElementById('script1Output').textContent = script1Content;
+
+          var tutor2Content = `ติดตั้ง python \n`;
+          tutor2Content = tutor2Content + `ในขั้นตอนนี้และขั้นตอนถัดไปผู้อ่านจะออกคำสั่งบนเครื่อง ${controller01} เป็นหลัก \n`;
+
+          document.getElementById('tutor2Output').innerHTML = tutor2Content;
+
+          var script2Content = `$ sudo apt install git python3-dev libffi-dev python3-venv gcc libssl-dev git python3-pip python3-full\n`;
+          document.getElementById('script2Output').textContent = script2Content;
+
+          var tutor3Content = `สร้างคู่ private/public keys และกระจาย public key บนทุกเครื่องโฮสต์\n`;
+          tutor3Content = tutor3Content + `หลังจากนั้น ผู้อ่านสามารถทำต่อไปนี้ \n`;
+          tutor3Content = tutor3Content + `<ul><li>ล็อกอินทางไกลเข้าสู่เครื่่อง ${network01} ${compute01} และ ${compute02} \n`;
+          tutor3Content = tutor3Content + `ด้วย ssh แล้วอัพเดท Linux ดังที่เคยทำบนเครื่อง  ${controller01}\n`;
+          tutor3Content = tutor3Content + `<li>ใช้ ping ทดสอบการเชื่อมต่อระหว่างเครื่องโฮสต์ \n`;
+          tutor3Content = tutor3Content + `ผ่าน data tunnel network และ \n`;
+          tutor3Content = tutor3Content + `<li>ทดสอบการเชื่อมต่อจากเครื่อง ${network01} \n`;
+          tutor3Content = tutor3Content + `ไปยัง external network\n`;
+          tutor3Content = tutor3Content + `(สมมุติว่า a.b.c.d/e คือค่า IP address ใน subnet ${extSubnetCidr}\n`;
+          tutor3Content = tutor3Content + `ที่ว่างอยู่ ยังไม่ถูกใช้งาน มันจะถูกใช้ในการทดสอบนี้ชั่วคราวแล้วถูกลบออกไป)</ul>\n`;
+
+          document.getElementById('tutor3Output').innerHTML = tutor3Content;
+
+          var script3Content = `$ ssh-keygen\n...\npress enter on every prompt\n...\n`;
+          script3Content = script3Content + `$ for x in ${network01} ${compute01} ${compute02}; do ssh-copy-id ${kollaUser}@\$x; done\n`;
+          script3Content = script3Content + `$ \n`;
+          script3Content = script3Content + `$ for x in ${network01} ${compute01} ${compute02}; do \\\n     ssh ${kollaUser}@\$x \'lsb_release -a; uname -a\'; done\n`;
+          script3Content = script3Content + `$ \n`;
+          script3Content = script3Content + `$ ssh ${network01} \n`;
+          script3Content = script3Content + `...\n`;
+          script3Content = script3Content + `On ${network01} host: \n`;
+          script3Content = script3Content + `${network01}..$ sudo apt update; sudo apt dist-upgrade \n`;
+          script3Content = script3Content + `${network01}..$ test -f /var/run/reboot-required && sudo reboot \n`;
+          script3Content = script3Content + `${network01}..$ exit \n`;
+          script3Content = script3Content + `...\n`;
+          script3Content = script3Content + `# --> do the same for ${compute01} and ${compute02}  \n`;
+          script3Content = script3Content + `...\n`;
+          script3Content = script3Content + `Back on ${controller01} host: \n`;
+          script3Content = script3Content + `$ \n`;
+          script3Content = script3Content + `$ for x in ${network01} ${compute01} ${compute02}; do \\\n     ssh ${kollaUser}@\$x \'ping -c 2 ${net01TunIp}; ping -c 2 ${com01TunIp}; ping -c 2 ${com02TunIp} \'; done\n`;
+          script3Content = script3Content + `$ \n`;
+          script3Content = script3Content + `$ ssh ${network01} sudo ip address add a.b.c.d/e dev ${net01ExtNic} \n`;
+          script3Content = script3Content + `$ ssh ${network01} sudo ip link set ${net01ExtNic}  up \n`;
+          script3Content = script3Content + `$ \n`;
+          script3Content = script3Content + `$ ssh ${network01} ping -c 2 ${extGatewayIp}\n`;
+          script3Content = script3Content + `$ ssh ${network01} sudo ip address del a.b.c.d/e dev ${net01ExtNic} \n`;
+
+          document.getElementById('script3Output').textContent = script3Content;
+
+          var tutor4Content = `สร้าง virtual environment และออกคำสั่งภายใน virtual environment\n`;
+          tutor4Content = tutor4Content + `ขอให้ผู้อ่านสังเกตุว่า command lime prompt จะเปลี่ยนเป็น \n`;
+          tutor4Content = tutor4Content + `(kolla-ops) ${kollaUser}@${controller01}:~$\n`;
+          tutor4Content = tutor4Content + `ซึ่งเราจะย่อเป็น (kolla-ops)...:~$ เพื่อความสะดวกในการเขียน\n`;
+
+          document.getElementById('tutor4Output').innerHTML = tutor4Content;
+
+          var script4Content = `$ cd $HOME\n`;
+          script4Content = script4Content + `$ mkdir $HOME/kolla-ops\n`;
+          script4Content = script4Content + `$ python3 -m venv $HOME/kolla-ops\n`;
+          script4Content = script4Content + `$ source $HOME/kolla-ops/bin/activate\n`;
+          script4Content = script4Content + `(kolla-ops) ${kollaUser}@${controller01}:~$ \n`;
+          script4Content = script4Content + `(kolla-ops)...:~$\n`;
+          script4Content = script4Content + `(kolla-ops)...:~$ pip install -U pip\n`;
+          script4Content = script4Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script4Output').textContent = script4Content;
+
+          var tutor5Content = `ถ้าผู้อ่านต้องการออกจาก virtual environment ให้ใช้คำสั่ง "deactivate"\n`;
+          tutor5Content = tutor5Content + `ในกรณีที่ผู้อ่านต้องการกลับเข้าสู่ virtual environment อีกครั้งหนึ่ง (ไม่ว่าจะอยู่ในขั้นตอนใด) \n`;
+          tutor5Content = tutor5Content + `ผู้อ่านต้องออกคำสั่ง <i>source $HOME/kolla-ops/bin/activate</i> ข้างต้น \n`;
+          tutor5Content = tutor5Content + `<p>ถัดจากนั้น ติดตั้ง Ansible และสร้างไฟล์ Ansible Configuration ซึ่งหมายถึงเพิ่มประสิทธิภาพของ\n`;
+          tutor5Content = tutor5Content + `ansible โดยใช้การประมวลผลแบบไปป์ไลน์และใช้หลายโพรเซส\n`;
+
+          document.getElementById('tutor5Output').innerHTML = tutor5Content;
+
+          var script5Content = `(kolla-ops)...:~$ pip install \'ansible>=8,<9\'\n`;
+          script5Content = script5Content + `(kolla-ops)...:~$ nano $HOME/ansible.cfg \n`;
+          script5Content = script5Content + `(kolla-ops)...:~$ cat $HOME/ansible.cfg \n`;
+          script5Content = script5Content + ` \n`;
+          script5Content = script5Content + `[defaults]\n`;
+          script5Content = script5Content + `host_key_checking=False\n`;
+          script5Content = script5Content + `pipelining=True\n`;
+          script5Content = script5Content + `forks=100\n`;
+          script5Content = script5Content + ` \n`;
+          script5Content = script5Content + `(kolla-ops)...:~$\n`;
+
+          document.getElementById('script5Output').textContent = script5Content;
+
+          var tutor6Content = `ติดตั้ง kolla-ansible และสร้าง Multi-nodes deployment configuration\n`;
+          tutor6Content = tutor6Content + ` ในไดเรกทอรี่ /etc/kolla ซึ่งจะมีไฟล์สองไฟล์คือ globals.yml และ passwords.yml \n\n`;
+
+          document.getElementById('tutor6Output').innerHTML = tutor6Content;
+
+          var script6Content = `(kolla-ops)...:~$ pip install git+https://opendev.org/openstack/kolla-ansible@stable/2024.1 \n`;
+          script6Content = script6Content + `(kolla-ops)...:~$ sudo mkdir /etc/kolla\n`;
+          script6Content = script6Content + `(kolla-ops)...:~$ sudo chown ${kollaUser}:${kollaUser} /etc/kolla\n`;
+          script6Content = script6Content + `(kolla-ops)...:~$ cp $HOME/kolla-ops/share/kolla-ansible/etc_examples/kolla/* /etc/kolla/\n`;
+          script6Content = script6Content + `(kolla-ops)...:~$ ls /etc/kolla\n`;
+          script6Content = script6Content + `globals.yml  passwords.yml\n`;
+          script6Content = script6Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script6Output').textContent = script6Content;
+
+          var tutor7Content = `กำหนดค่าคุณลักษณะของการติดตั้งระบบโอเพ่นสแตคในไฟล์ global.yml \n`;
+          tutor7Content = tutor7Content + `ในตัวอย่างนี้ เราจะติดตั้ง openstack core components ได้แก่\n`;
+          tutor7Content = tutor7Content + `ระบบ keystone nova neutron glance cinder heat และ horizon \n`;
+
+          document.getElementById('tutor7Output').innerHTML = tutor7Content;
+
+          var script7Content = ` (kolla-ops)...:~$ nano /etc/kolla/globals.yml\n`;
+          script7Content = script7Content + `\n`;
+          script7Content = script7Content + `# --> For ansible and kolla options: \n`;
+          script7Content = script7Content + `# --> uncomment or add the following lines \n\n`;
+          script7Content = script7Content + `workaround_ansible_issue_8743: yes\n`;
+          script7Content = script7Content + `config_strategy: "COPY_ALWAYS"\n`;
+          script7Content = script7Content + `kolla_base_distro: "ubuntu"\n`;
+          script7Content = script7Content + `openstack_release: "2024.1"\n`;
+          script7Content = script7Content + `kolla_internal_vip_address: "${kollaIntVipAddr}"\n`;
+          script7Content = script7Content + `\n`;
+          script7Content = script7Content + `# --> For container engine options: \n`;
+          script7Content = script7Content + `# --> uncomment or add the following lines \n\n`;
+          script7Content = script7Content + `kolla_container_engine: docker\n`;
+          script7Content = script7Content + `\n`;
+          script7Content = script7Content + `# --> For neutron networking options: \n`;
+          script7Content = script7Content + `# --> uncomment or add the following lines \n\n`;
+          script7Content = script7Content + `network_address_family: "ipv4"\n`;
+          script7Content = script7Content + `neutron_plugin_agent: "openvswitch"\n`;
+          script7Content = script7Content + `\n`;
+          script7Content = script7Content + `# --> For openstack core options: \n`;
+          script7Content = script7Content + `# --> uncomment or add the following lines \n\n`;
+          script7Content = script7Content + `enable_openstack_core: "yes"\n`;
+          script7Content = script7Content + `enable_glance: "{{ enable_openstack_core | bool }}"\n`;
+          script7Content = script7Content + `enable_haproxy: "yes"\n`;
+          script7Content = script7Content + `enable_keepalived: "{{ enable_haproxy | bool }}"\n`;
+          script7Content = script7Content + `enable_keystone: "{{ enable_openstack_core | bool }}"\n`;
+          script7Content = script7Content + `enable_mariadb: "yes"\n`;
+          script7Content = script7Content + `enable_memcached: "yes"\n`;
+          script7Content = script7Content + `enable_neutron: "{{ enable_openstack_core | bool }}"\n`;
+          script7Content = script7Content + `enable_nova: "{{ enable_openstack_core | bool }}"\n`;
+          script7Content = script7Content + `enable_rabbitmq: "{{ 'yes' if om_rpc_transport == 'rabbit' or om_notify_transport == 'rabbit' else 'no' }}"\n`;
+          script7Content = script7Content + `\n`;
+          script7Content = script7Content + `# --> For specific openstack services:\n`;
+          script7Content = script7Content + `# --> uncomment or add the following lines \n\n`;
+          script7Content = script7Content + `enable_cinder: "yes"\n`;
+          script7Content = script7Content + `enable_cinder_backend_lvm: "yes"\n`;
+          script7Content = script7Content + `enable_etcd: "yes"\n`;
+          script7Content = script7Content + `enable_horizon: "{{ enable_openstack_core | bool }}"\n`;
+          script7Content = script7Content + `enable_placement: "{{ enable_nova | bool or enable_zun | bool }}"\n`;
+          script7Content = script7Content + `glance_backend_file: "yes"\n`;
+          script7Content = script7Content + `cinder_volume_group: "cinder-volumes"\n`;
+          script7Content = script7Content + `\n`;
+
+          document.getElementById('script7Output').textContent = script7Content;
+
+          var tutor8Content = `กำหนดค่าไฟล์ multinode inventory\n`;
+          tutor8Content = tutor8Content + `จากภาพโครงสร้างของระบบคลัสเตอร์ของเครื่องโฮสต์ในภาพหลักของเว็บเพจนี้\n`;
+          tutor8Content = tutor8Content + `ผู้อ่านต้องเปลี่ยนแปลงค่าในไฟล์ multinode ในหัวข้อ [control] [network]  \n`;
+          tutor8Content = tutor8Content + `[monitoring] และ [storage] ดังนี้ \n`;
+
+          document.getElementById('tutor8Output').innerHTML = tutor8Content;
+
+          var script8Content = `(kolla-ops)...:~$ cp $HOME/kolla-ops/share/kolla-ansible/ansible/inventory/multinode .\n`;
+          script8Content = script8Content + `(kolla-ops)...:~$ nano multinode\n`;
+          script8Content = script8Content + `...\n`;
+          script8Content = script8Content + `[control]\n`;
+          script8Content = script8Content + `${controller01} ansible_connection=local network_interface=${con01ManNic}\n`;
+          script8Content = script8Content + `\n`;
+          script8Content = script8Content + `[network]\n`;
+          script8Content = script8Content + `${network01} network_interface=${net01ManNic} tunnel_interface=${net01TunNic} neutron_external_interface=${net01ExtNic}\n`;
+          script8Content = script8Content + `\n`;
+          script8Content = script8Content + `[compute]\n`;
+          script8Content = script8Content + `${compute01} network_interface=${com01ManNic} tunnel_interface=${com01TunNic} \n`;
+          script8Content = script8Content + `${compute02} network_interface=${com02ManNic} tunnel_interface=${com02TunNic} \n`;
+          script8Content = script8Content + `\n`;
+          script8Content = script8Content + `[monitoring]\n`;
+          script8Content = script8Content + `${controller01} ansible_connection=local network_interface=${con01ManNic}\n`;
+          script8Content = script8Content + `\n`;
+          script8Content = script8Content + `[storage]\n`;
+          script8Content = script8Content + `${compute01} network_interface=${com01ManNic} \n`;
+          script8Content = script8Content + `...\n`;
+
+          document.getElementById('script8Output').textContent = script8Content;
+
+          var tutor9Content = `สร้าง LVM volumes เพื่อรองรับการสร้างบล็อคสตอเรจเสมือนบนเครื่อง storage โฮสต์\n`;
+          tutor9Content = tutor9Content + `ในตัวอย่างนี้ ผู้เขียนกำหนดให้เครื่อง storage โฮสต์คือ ${compute01}\n`;
+          tutor9Content = tutor9Content + `ดังนั้นผู้อ่านต้องใช้ ssh เพื่อล็อกอินทางไกลเข้าสู่เครื่อง ${compute01} \n`;
+          tutor9Content = tutor9Content + `แล้วใช้คำสัง lsblk หาชื่ออุปกรณ์เก็บข้อมูลที่ต้องการใช้เก็บบล็อคสตอเรจเสมือน ยกตัวอย่างเช่น\n`;
+          tutor9Content = tutor9Content + `/dev/sdb แล้วสร้าง volumes ชื่อ cinder-volumes บนอุปกรณ์บล็อกสตอเรจนั้น \n`;
+
+          document.getElementById('tutor9Output').innerHTML = tutor9Content;
+
+          var script9Content = `On ${controller01}:\n(kolla-ops)...:~$ ssh ${kollaUser}@${compute01}\n`;
+          script9Content = script9Content + `\nOn host ${compute01}\n`;
+          script9Content = script9Content + `$ lsblk \n`;
+          script9Content = script9Content + `...\n`;
+          script9Content = script9Content + `$ sudo apt install lvm2 thin-provisioning-tools\n`;
+          script9Content = script9Content + `$ sudo pvcreate /dev/sdb\n`;
+          script9Content = script9Content + `$ sudo vgcreate cinder-volumes /dev/sdb\n`;
+          script9Content = script9Content + `$ sudo vgs\n`;
+          script9Content = script9Content + `  VG             #PV #LV #SN Attr   VSize   VFree\n`;
+          script9Content = script9Content + `cinder-volumes   1   0   0 wz--n- <80.00g <80.00g\n`;
+          script9Content = script9Content + `$\n`;
+          script9Content = script9Content + `$ exit\n`;
+          script9Content = script9Content + `\nOn ${controller01}\n`;
+          script9Content = script9Content + `...\n`;
+          script9Content = script9Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script9Output').textContent = script9Content;
+
+          var tutor10Content = `สร้างพาสเวิร์ดสำหรับแต่ละ openstack service \n`;
+          tutor10Content = tutor10Content + `รวมทั้งพาสเวิร์ดของผู้ดูแลระบบภายใต้บัญชีผู้ใช้ admin ในไฟล์ /etc/kolla/passwords.yml\n\n`;
+          tutor10Content = tutor10Content + `(หมายเหตุ: ไฟล์นี้ไม่ได้รับการเข้ารหัส)\n\n`;
+
+          document.getElementById('tutor10Output').innerHTML = tutor10Content;
+
+          var script10Content = `(kolla-ops)...:~$ kolla-genpwd\n`;
+          script10Content = script10Content + `(kolla-ops)...:~$\n`;
+
+          document.getElementById('script10Output').textContent = script10Content;
+
+          var tutor11Content = `ติดตั้ง kolla ansible galaxy requirements \n`;
+
+          document.getElementById('tutor11Output').innerHTML = tutor11Content;
+
+          var script11Content = `(kolla-ops)...:~$ kolla-ansible install-deps\n`;
+          script11Content = script11Content + `(kolla-ops)...:~$\n`;
+
+          document.getElementById('script11Output').textContent = script11Content;
+
+          var tutor12Content = `ประมวลผลกระบวนการ kolla-ansible Bootstrap Precheck และ Deploy openstack  \n`;
+          tutor12Content = tutor12Content + `การ Bootstrap คือการปรับเปลี่ยนคุณลักษณะของเครื่องโฮสต์ที่จะติดตั้งโอเพ่นสแตคด้วย\n`;
+          tutor12Content = tutor12Content + `เช่นกำหนดค่า /etc/hosts สร้างบัญชีผู้ใช้ ติดตั้ง docker และซอฟต์แวร์ที่จำเป็น เป็นต้น \n`;
+          tutor12Content = tutor12Content + `การ precheck คือตรวจสอบความพร้อมอีกครั้ง และการ Deploy คือการติดตั้งโอเพ่นสแตค\n`;
+          tutor12Content = tutor12Content + `<p>ในกรณีที่ผู้อ่านพบข้อความ Fatal error หลังใช้คำสั่งใดคำสั่งหนึ่งข้างต้น ผู้อ่านควรแก้ปัญหาโดยปรึกษา AI หรือค้นหา \n`;
+          tutor12Content = tutor12Content + `คำตอบบนอินเตอร์เน็ต และแก้ปัญหาเหล่านั้นก่อนที่จะรันคำสั่งที่รายงานความผิดพลาด\n`;
+          tutor12Content = tutor12Content + `อีกครั้งหนึ่ง \n`;
+
+          document.getElementById('tutor12Output').innerHTML = tutor12Content;
+
+          var script12Content = ` (kolla-ops)...:~$ kolla-ansible -i multinode bootstrap-servers\n`;
+          script12Content = script12Content + ` ...\n`;
+          script12Content = script12Content + ` (kolla-ops)...:~$ kolla-ansible -i multinode prechecks\n`;
+          script12Content = script12Content + ` ...\n`;
+          script12Content = script12Content + ` (kolla-ops)...:~$ kolla-ansible -i multinode deploy\n`;
+          script12Content = script12Content + ` ...\n`;
+
+          document.getElementById('script12Output').textContent = script12Content;
+
+          var tutor13p1Content = `ตรวจสอบสถานะการติดตั้ง\n`;
+          tutor13p1Content = tutor13p1Content + `ผู้อ่านสามารถตรวจสอบสถานะของส่วนประกอบของระบบโอเพ่นสแตคด้วยคำสั่ง \n`;
+          tutor13p1Content = tutor13p1Content + `sudo docker ps ในกรณีที่ต้องการใช้คำสั่งนี้โดยไม่ใส่ sudo ผู้อ่านต้องใช้คำสั่ง usermod \n`;
+          tutor13p1Content = tutor13p1Content + `ข้างล่างเพื่อเพิ่มบัญชี ${kollaUser} ใน group docker แล้วออกคำสั่ง exit\n`;
+          tutor13p1Content = tutor13p1Content + `(ระบบลินุกซ์จะเพิ่มบัญชี ${kollaUser} ใน group docker ในการรัน shell ครั้งถัดไป)\n`;
+
+          document.getElementById('tutor13p1Output').innerHTML = tutor13p1Content;
+
+          var script13p1Content = `(kolla-ops)...:~$ sudo docker ps\n`;
+          script13p1Content = script13p1Content + `... outputs ...\n`;
+          script13p1Content = script13p1Content + `(kolla-ops)...:~$ sudo usermod -aG docker ${kollaUser}\n`;
+          script13p1Content = script13p1Content + `(kolla-ops)...:~$ groups ${kollaUser}\n`;
+          script13p1Content = script13p1Content + `# --> you will see that user ${kollaUser} is in the docker group \n`;
+          script13p1Content = script13p1Content + `(kolla-ops)...:~$ docker ps\n`;
+          script13p1Content = script13p1Content + `# --> but this command still does not work since the shell is the old shell \n`;
+          script13p1Content = script13p1Content + `(kolla-ops)...:~$ exit\n`;
+
+          document.getElementById('script13p1Output').textContent = script13p1Content;
+
+          var tutor13p2Content = `ล็อกอินเข้าสู่เครื่อง ${controller01} อีกครั้งหนึ่ง (หรือรัน shell ใหม่)\n`;
+          tutor13p2Content = tutor13p2Content + `แล้วใช้คำสั่ง source $HOME/kolla-ops/bin/activate เข้าสู่\n`;
+          tutor13p2Content = tutor13p2Content + `virtual environment หลังจากนั้น ผู้อ่านจะสามารถใช้คำสั่ง \n`;
+          tutor13p2Content = tutor13p2Content + `docker ps ในบัญชีผู้ใช้ ${kollaUser} บนเครื่อง ${controller01}\n`;
+          tutor13p2Content = tutor13p2Content + `ได้โดยไม่ต้องใส่พาสเวิร์ด แต่อย่างไรก็ตาม เมื่อผู้ใช้ต้องการดูสถานะของ\n`;
+          tutor13p2Content = tutor13p2Content + `ส่วนประกอบของระบบโอเพ่นสแตคบนโฮสต์เครื่องอื่น ผู้อ่านยังคงต้องใช้คำสั่ง\n`;
+          tutor13p2Content = tutor13p2Content + `sudo docker ps อยู่ดี นอกจากว่าผู้อ่านจะใช้คำสั่ง usermod บนเครื่องโฮสต์อื่น\n`;
+          tutor13p2Content = tutor13p2Content + `แบบเดียวกับที่ทำบนเครื่อง ${controller01}\n`;
+
+          document.getElementById('tutor13p2Output').innerHTML = tutor13p2Content;
+
+          var script13p2Content = `$  # --> after login or run a new shell\n`;
+          script13p2Content = script13p2Content + `$ groups ${kollaUser}\n`;
+          script13p2Content = script13p2Content + `# --> you will see ${kollaUser} being added in the docker group.\n`;
+          script13p2Content = script13p2Content + `$ source $HOME/kolla-ops/bin/activate\n`;
+          script13p2Content = script13p2Content + `(kolla-ops)...:~$ docker ps\n`;
+          script13p2Content = script13p2Content + `(kolla-ops)...:~$ docker inspect nova_api \n`;
+          script13p2Content = script13p2Content + `...\ninfo and status of nova_api\n ...\n`;
+          script13p2Content = script13p2Content + `(kolla-ops)...:~$ ssh ${network01} sudo docker ps\n`;
+          script13p2Content = script13p2Content + `(kolla-ops)...:~$ ssh ${compute01} sudo docker ps\n`;
+          script13p2Content = script13p2Content + `(kolla-ops)...:~$ ssh ${compute02} sudo docker ps\n`;
+          script13p2Content = script13p2Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script13p2Output').textContent = script13p2Content;
+
+          var tutor14Content = `ติดตั้ง client cli ซอฟต์แวร์ของระบบโอเพ่นสแตค \n`;
+
+          document.getElementById('tutor14Output').innerHTML = tutor14Content;
+
+          var script14Content = `(kolla-ops)...:~$ pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/2024.1\n`;
+          script14Content = script14Content + `(kolla-ops)...:~$ pip install python-neutronclient -c https://releases.openstack.org/constraints/upper/2024.1\n`;
+          script14Content = script14Content + `(kolla-ops)...:~$ pip install python-keystoneclient -c https://releases.openstack.org/constraints/upper/2024.1\n`;
+          script14Content = script14Content + `(kolla-ops)...:~$ pip install python-glanceclient -c https://releases.openstack.org/constraints/upper/2024.1\n`;
+          script14Content = script14Content + `(kolla-ops)...:~$ pip install python-heatclient -c https://releases.openstack.org/constraints/upper/2024.1\n`;
+          script14Content = script14Content + `(kolla-ops)...:~$ pip install python-cinderclient -c https://releases.openstack.org/constraints/upper/2024.1\n`;
+          script14Content = script14Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script14Output').textContent = script14Content;
+
+          var tutor15Content = `รันสคริปต์ init-runonce เพื่อแสดงตัวอย่างการใช้งานระบบโอเพ่นสแตค\n`;
+          tutor15Content = tutor15Content + `ผู้อ่านควรศึกษารายละเอียดของไฟล์ init-runonce เพื่อเรียนรู้การออกคำสั่ง\n`;
+          tutor15Content = tutor15Content + `แบบ cli ้เพื่อสั่งงานระบบโอเพ่นสแตค ด้วยตนเอง\n`;
+
+          document.getElementById('tutor15Output').innerHTML = tutor15Content;
+
+          var script15Content = `(kolla-ops)...:~$ kolla-ansible post-deploy\n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ source /etc/kolla/admin-openrc.sh\n`;
+          script15Content = script15Content + `# --> you have to run the command above to use openstack CLI.\n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ \n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ openstack service list\n`;
+          script15Content = script15Content + `... output table...\n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ ls kolla-ops/share/kolla-ansible/init-runonce \n`;
+          script15Content = script15Content + `kolla-ops/share/kolla-ansible/init-runonce \n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ \n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ nano kolla-ops/share/kolla-ansible/init-runonce\n`;
+          script15Content = script15Content + `\n`;
+          script15Content = script15Content + `# --> change the following lines\n`;
+          script15Content = script15Content + `\n`;
+          script15Content = script15Content + `EXT_NET_CIDR=\$\{EXT_NET_CIDR:-\'${extSubnetCidr}\'\}\n`;
+          script15Content = script15Content + `EXT_NET_RANGE=\$\{EXT_NET_RANGE:-\'start=${extStartIp},end=${extEndIp}\'\}\n`;
+          script15Content = script15Content + `EXT_NET_GATEWAY=\$\{EXT_NET_GATEWAY:-\'${extGatewayIp}\'\}\n`;
+          script15Content = script15Content + `\n`;
+          script15Content = script15Content + `# --> save file\n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ ./kolla-ops/share/kolla-ansible/init-runonce\n`;
+          script15Content = script15Content + `\n`;
+          script15Content = script15Content + `... outputs ...\n`;
+          script15Content = script15Content + `\n`;
+          script15Content = script15Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script15Output').textContent = script15Content;
+
+          var tutor16Content = `ใช้ browser เปิด URL <b>http://${kollaIntVipAddr}</b>\n`;
+          tutor16Content = tutor16Content + `ผู้อ่านต้องใช้คำสั่งต่อไปนี้เพื่อหาค่าพาสเวิร์ดของบัญชีผู้ใช้ admin\n`;
+          tutor16Content = tutor16Content + ` \n`;
+
+          document.getElementById('tutor16Output').innerHTML = tutor16Content;
+
+          var script16Content = `(kolla-ops)...:~$ grep keystone_admin_password /etc/kolla/passwords.yml\n`;
+          script16Content = script16Content + `(kolla-ops)...:~$ \n`;
+
+          document.getElementById('script16Output').textContent = script16Content;
+
+          var tutor17Content = `<u>ถ้าผู้อ่านต้องการเข้าถึง External Network จากเครื่อง ${controller01}</u>\n`;
+          tutor17Content = tutor17Content + `ผู้อ่านต้องเซ็ตค่า IP address ในสับเน็ต ${extSubnetCidr} ที่ยังไม่ถูกใช้งาน\n`;
+          tutor17Content = tutor17Content + `(สมมุติว่าเท่ากับ a.b.c.d/e) ให้กับ ${con01ExtNic}\n`;
+          tutor17Content = tutor17Content + `เพื่อให้เครื่อง ${controller01} สามารถเข้าถึง floating IP ได้\n`;
+
+          document.getElementById('tutor17Output').innerHTML = tutor17Content;
+
+          var script17Content = `On ${controller01} host: \n`;
+          script17Content = script17Content + `$ sudo ip address add a.b.c.d/e dev ${con01ExtNic}\n`;
+          script17Content = script17Content + `$ sudo ip link set ${con01ExtNic} up\n`;
+
+          document.getElementById('script17Output').textContent = script17Content;
+
+          var tutor18Content = `<u>ในกรณีที่ผู้อ่านต้องการแก้ไขเพิ่มเติมการติดตั้งระบบโอเพ่นสแตค</u> เช่น เพิ่มหรือลดบริการของส่วนประกอบ \n`;
+          tutor18Content = tutor18Content + `และความสามารถของระบบ ผู้อ่านต้องเข้าสู่ virtual environment และ\n`;
+          tutor18Content = tutor18Content + `เปลี่ยนแปลงค่าในไฟล์ /etc/kolla/globals.yml \n`;
+          tutor18Content = tutor18Content + `และ ใช้คำสั่ง reconfigure ของ kolla-ansible\n`;
+
+          document.getElementById('tutor18Output').innerHTML = tutor18Content;
+
+          var script18Content = `$(kolla-ops)...:~$ source $HOME/kolla-ops/bin/activate\n`;
+          script18Content = script18Content + `(kolla-ops)...:~$ kolla-ansible -i multinode reconfigure\n`;
+
+          document.getElementById('script18Output').textContent = script18Content;
+
+          var finalContent = `<b>References</b>:<p>ผู้อ่านควรศึกษาข้อมูลเพิ่มเติมจากแหล่งข้อมูลต่อไปนี้\n`;
+          finalContent = finalContent + `เพื่อเพิ่มความเข้าใจเกี่ยวกับ kolla-ansible และระบบโอเพ่นสแตค\n`;
+          finalContent = finalContent + `<ol>\n`;
+          finalContent = finalContent + `<li><a href="https://kifarunix.com/deploy-multinode-openstack-using-kolla-ansible/">Deploy Multinode OpenStack using Kolla-Ansible</a></li>\n`;
+          finalContent = finalContent + `<li><a href="https://kifarunix.com/deploy-all-in-one-openstack-with-kolla-ansible-on-ubuntu-22-04/">Deploy All-in-One OpenStack with Kolla-Ansible on Ubuntu 22.04</a></li>\n`;
+          finalContent = finalContent + `<li><a href="https://docs.openstack.org/kolla-ansible/latest/user/multinode.html">Multinode Deployment of Kolla</a></li>\n`;
+          finalContent = finalContent + `<li><a href="https://docs.openstack.org/kolla-ansible/latest/">Welcome to Kolla Ansible’s documentation!</a></li>\n`;
+          finalContent = finalContent + `</ol>\n`;
+
+          document.getElementById('finalOutput').innerHTML = finalContent;
+        }
+        else{
+          resultDiv.style.color = "red";
+          resultDiv.textContent = outputText;
+          verResultDiv.innerHTML = '<span class="status-badge status-fail"><i class="fas fa-times-circle"></i> Fail</span>';
+
+          tutorial.classList.add('hidden');
+        }
+    }
+
+    function isValidCIDR(cidr) {
+        // Regular expression to validate CIDR notation
+        const cidrPattern = /^(\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$/;
+        return cidrPattern.test(cidr);
+    }
+
+    function isValidIpAddress(ip) {
+        // Regular expression to match IPv4 addresses
+        const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+        return ipPattern.test(ip);
+    }
+
+    function checkIpInSubnet(ipAddress,subnet) {
+
+        if (!isValidIpAddress(ipAddress)) {
+            return [ -1, 0 ];
+        }
+
+        const [subnetIp, subnetMask] = subnet.split('/');
+        if (!isValidIpAddress(subnetIp) || isNaN(subnetMask) || subnetMask < 0 || subnetMask > 32) {
+            return [ -2, 0 ];
+        }
+
+        const ipParts = ipAddress.split('.').map(Number);
+        const subnetParts = subnetIp.split('.').map(Number);
+        const mask = parseInt(subnetMask, 10);
+        
+        // Calculate the number of bits for the network portion
+        const maskBits = (1 << (32 - mask)) - 1;
+
+        // Convert IPs to integers
+        const ipInt = (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3];
+        const subnetInt = (subnetParts[0] << 24) | (subnetParts[1] << 16) | (subnetParts[2] << 8) | subnetParts[3];
+
+        // Check if the IP is in the subnet
+        if ((ipInt & ~maskBits) === (subnetInt & ~maskBits)) {
+            return [ ipInt, 1 ];
+        } else {
+            return [ -3, 0 ];
+        }
+    }
+
+    function dline(x1,y1,x2,y2,color){
+        const ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); // Starting point at (100, 50)
+        ctx.lineTo(x2, y2); // Ending point at (990, 50)
+        ctx.lineWidth = 5; // Width of the line
+        ctx.strokeStyle = color; // Color of the line
+        ctx.stroke();
+    }
+
+    function dlinedash(x1,y1,x2,y2,color){
+        const ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); // Starting point at (100, 50)
+        ctx.lineTo(x2, y2); // Ending point at (990, 50)
+        ctx.setLineDash([2, 4]); 
+        ctx.lineWidth = 5; // Width of the line
+        ctx.strokeStyle = color; // Color of the line
+        ctx.stroke();
+    }
+
+    function dbox(x1,y1,width,height, color){
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = color; // Fill color for the box
+        ctx.fillRect(x1, y1, width, height); // Position (150, 200) with width 100 and height 50
+    }
+
+    function dstroke(x1,y1,width,height, color, lwidth){
+        const ctx = canvas.getContext("2d");
+        ctx.strokeStyle = color; 
+        ctx.lineWidth = lwidth;
+        ctx.strokeRect(x1, y1, width, height); 
+    }
+
+    function dlabel20px(x,y,label, color){
+        const ctx = canvas.getContext("2d");
+        ctx.font = "20px Arial"; // Font size and family
+        ctx.fillStyle = color;   // Text color
+        ctx.fillText(label, x, y); // Text, x, y 
+    }
+
+    function dlabel16px(x,y,label, color){
+        const ctx = canvas.getContext("2d");
+        ctx.font = "16px Arial"; // Font size and family
+        ctx.fillStyle = color;   // Text color
+        ctx.fillText(label, x, y); // Text, x, y 
+    }
+    
+    const canvas = document.getElementById("myCanvas");
+
+    dbox(40,80,250,270,"Beige"); 
+    dbox(330,80,250,340,"Beige"); 
+    dbox(620,80,250,220,"Beige"); 
+    dbox(910,80,250,220,"Beige"); 
+
+    // Management Network
+    dline(100,50,1100,50,"DimGrey");
+
+    dline(150,50,150,95,"DimGray");
+    dline(440,50,440,95,"DimGray");
+    dline(730,50,730,95,"DimGray");
+    dline(1020,50,1020,95,"DimGray");
+
+    dlabel20px(310,30,"Management Net CIDR:","Black");
+
+    // Data Tunnel Network
+    dline(437,307,1023,307,"DimGrey");
+
+    dline(440,277,440,307,"DimGray");
+    dline(730,277,730,307,"DimGray");
+    dline(1020,277,1020,307,"DimGray");
+
+    dlabel20px(610,342,"Tunnel Net CIDR:","Black");
+
+    // External Net
+    dline(100,431,1100,431,"DimGrey");
+    dline(440,400,440,430,"DimGray");
+    dlabel20px(610,410,"External Net CIDR:","Black");
+
+    dlinedash(150,350,150,430,"DarkOrange");
+
+    // controller01
+    dlabel16px(70,75,"local", "Blue");
+    dlabel16px(170,75,"controller", "DarkBlue");
+    dlabel16px(70,117,"Nic01:","Black");
+    dlabel16px(70,143,"IP 01:","Black");
+    dstroke(60,95,220,60,"GoldenRod",2);
+    dlabel16px(70,193," Host:","Black");
+    dlabel16px(70,223," User:","Black");
+    dlabel16px(60,253," Vip IP:","Black");
+
+    dlabel16px(70,307,"Optional","Black");
+    dlabel16px(70,330,"Nic02:","Black");
+
+    // network01 
+    dlabel16px(460,75,"network", "DarkBlue");
+    dlabel16px(360,117,"Nic01:","Black");
+    dlabel16px(360,143,"IP 01:","Black");
+    dstroke(350,95,220,60,"GoldenRod",2);
+    dlabel16px(360,193," Host:","Black");
+
+    dlabel16px(360,240,"Nic02:","Black");
+    dlabel16px(360,266,"IP 02:","Black");
+    dstroke(350,218,220,60,"GoldenRod",2);
+
+    dlabel16px(360,363,"Nic03:","Black");
+    dlabel16px(360,389,"IP 03: uninitialized","Black");
+    dstroke(350,341,220,60,"GoldenRod",2);
+
+    //  compute01
+    dlabel16px(750,75,"compute & storage", "DarkBlue");
+    dlabel16px(650,117,"Nic01:","Black");
+    dlabel16px(650,143,"IP 01:","Black");
+    dstroke(640,95,220,60,"GoldenRod",2);
+    dlabel16px(650,193," Host:","Black");
+
+    dlabel16px(650,240,"Nic02:","Black");
+    dlabel16px(650,266,"IP 02:","Black");
+    dstroke(640,218,220,60,"GoldenRod",2);
+
+    //  compute02
+    dlabel16px(1040,75,"compute", "DarkBlue");
+    dlabel16px(940,117,"Nic01:","Black");
+    dlabel16px(940,143,"IP 01:","Black");
+    dstroke(930,95,220,60,"GoldenRod",2);
+    dlabel16px(940,193," Host:","Black");
+
+    dlabel16px(940,240,"Nic02:","Black");
+    dlabel16px(940,266,"IP 02:","Black");
+    dstroke(930,218,220,60,"GoldenRod",2);
+
+    //  External Network 
+    dlabel16px(160,459,"Ext Net Gateway:","Black");
+    dlabel16px(465,459,"StartIP:","Black");
+    dlabel16px(705,459,"EndIP:","Black");
+</script>
+
+</body>
+</html>
