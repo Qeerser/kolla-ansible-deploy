@@ -35,11 +35,11 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 	const canHaveTunnelInterface = (node: Node): boolean => {
 		if (node.type === "controller") return false;
 		if (node.type === "hybrid" &&
-		!(
-			node.hybridRoles?.network ||
-			node.hybridRoles?.compute ||
-			node.hybridRoles?.storage
-		)) return false;
+			!(
+				node.hybridRoles?.network ||
+				node.hybridRoles?.compute ||
+				node.hybridRoles?.storage
+			)) return false;
 		return true;
 	};
 
@@ -408,65 +408,6 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						</div>
 					)}
 
-					{/* Warning for tunnel IP requirement */}
-					{(node.type === "compute" ||
-						node.type === "storage" ||
-						node.type === "network" ||
-						(node.type === "hybrid" &&
-							node.hybridRoles &&
-							(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))) &&
-						!node.tunnelNic?.ip && (
-							<div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-								<div className="flex items-center">
-									<div className="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-									<p className="text-sm text-yellow-800">
-										<strong>Warning:</strong>{" "}
-										{node.type === "hybrid"
-											? "Hybrid nodes with network/compute/storage roles"
-											: `${node.type.charAt(0).toUpperCase() + node.type.slice(1)} nodes`}{" "}
-										require a tunnel IP address for proper network communication.
-									</p>
-								</div>
-							</div>
-						)}
-
-					{/* Warning for controller constraints */}
-					{(node.type === "controller" ||
-						(node.type === "hybrid" &&
-							node.hybridRoles?.controller &&
-							!(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))) &&
-						node.tunnelNic?.ip && (
-							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-								<div className="flex items-center">
-									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
-									<p className="text-sm text-red-800">
-										<strong>Error:</strong>{" "}
-										{node.type === "controller"
-											? "Controller nodes cannot have tunnel interfaces."
-											: "Hybrid nodes with only controller role cannot have tunnel interfaces."}{" "}
-										This will cause deployment validation to fail.
-									</p>
-								</div>
-							</div>
-						)}
-
-					{/* Warning for hybrid controller + other roles needing tunnel */}
-					{node.type === "hybrid" &&
-						node.hybridRoles?.controller &&
-						(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage) &&
-						!node.tunnelNic?.ip && (
-							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-								<div className="flex items-center">
-									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
-									<p className="text-sm text-red-800">
-										<strong>Error:</strong> Hybrid nodes with controller and other roles must have
-										tunnel interfaces for non-controller services. This will cause deployment
-										validation to fail.
-									</p>
-								</div>
-							</div>
-						)}
-
 					{/* Management NIC */}
 					<div className="mb-4">
 						<h4 className="text-md font-medium text-gray-700 mb-2">Management Network Interface</h4>
@@ -506,28 +447,7 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 							{!node.tunnelNic ? (
 								<button
 									onClick={() => addNic(node.id, "tunnelNic")}
-									disabled={
-										node.type === "controller" ||
-										(node.type === "hybrid" &&
-											node.hybridRoles?.controller &&
-											!(
-												node.hybridRoles.network ||
-												node.hybridRoles.compute ||
-												node.hybridRoles.storage
-											))
-									}
-									className={`text-sm ${
-										node.type === "controller" ||
-										(node.type === "hybrid" &&
-											node.hybridRoles?.controller &&
-											!(
-												node.hybridRoles.network ||
-												node.hybridRoles.compute ||
-												node.hybridRoles.storage
-											))
-											? "text-gray-400 cursor-not-allowed"
-											: "text-blue-500 hover:text-blue-700"
-									}`}
+									className="text-blue-500 hover:text-blue-700 text-sm"
 								>
 									Add Tunnel NIC
 								</button>
@@ -589,20 +509,6 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 									placeholder="IP address"
 								/>
 							</div>
-						)}
-						{(node.type === "controller" ||
-							(node.type === "hybrid" &&
-								node.hybridRoles?.controller &&
-								!(
-									node.hybridRoles.network ||
-									node.hybridRoles.compute ||
-									node.hybridRoles.storage
-								))) && (
-							<p className="text-xs text-gray-500 mt-1">
-								{node.type === "controller"
-									? "Controller nodes cannot have tunnel interfaces"
-									: "Hybrid nodes with only controller role cannot have tunnel interfaces"}
-							</p>
 						)}
 					</div>)}
 
