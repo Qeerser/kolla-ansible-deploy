@@ -99,6 +99,27 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 			continue;
 		}
 
+		// Validate that interface names are unique within the node
+		const interfaceNames: string[] = [];
+		const interfaces = [
+			{ type: "Management", nic: node.managementNic },
+			{ type: "Tunnel", nic: node.tunnelNic },
+			{ type: "External", nic: node.externalNic },
+			{ type: "VIP External", nic: node.vipExternalNic },
+		].filter((item) => item.nic && item.nic.name && item.nic.name.trim());
+
+		for (const iface of interfaces) {
+			const nicName = iface.nic!.name.trim();
+			if (interfaceNames.includes(nicName)) {
+				details.push(
+					`Node ${node.hostname}: Interface name '${nicName}' is used multiple times. Each interface must have a unique name.`
+				);
+				isValid = false;
+			} else {
+				interfaceNames.push(nicName);
+			}
+		}
+
 		// Check management IP
 		const [managementIpNum, managementValid] = checkIpInSubnet(node.managementNic.ip, config.managementCidr);
 		if (managementValid) {

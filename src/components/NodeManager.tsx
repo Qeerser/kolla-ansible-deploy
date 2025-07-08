@@ -11,6 +11,20 @@ interface NodeManagerProps {
 }
 
 const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeUpdate, onNodeRemove }) => {
+	// Helper function to check if interface name is already used in the same node
+	const isInterfaceNameDuplicate = (node: Node, nicType: string, interfaceName: string): boolean => {
+		if (!interfaceName.trim()) return false;
+
+		const interfaces = [
+			{ type: "management", nic: node.managementNic },
+			{ type: "tunnel", nic: node.tunnelNic },
+			{ type: "external", nic: node.externalNic },
+			{ type: "vipExternal", nic: node.vipExternalNic },
+		].filter((item) => item.nic && item.type !== nicType);
+
+		return interfaces.some((item) => item.nic!.name === interfaceName);
+	};
+
 	const updateNodeField = (nodeId: string, field: keyof Node, value: string | Node["type"]) => {
 		const node = nodes.find((n) => n.id === nodeId);
 		if (node) {
@@ -451,13 +465,24 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 					<div className="mb-4">
 						<h4 className="text-md font-medium text-gray-700 mb-2">Management Network Interface</h4>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-							<input
-								type="text"
-								value={node.managementNic.name}
-								onChange={(e) => updateNicField(node.id, "managementNic", "name", e.target.value)}
-								className="input-field"
-								placeholder="NIC name (e.g., ens3)"
-							/>
+							<div>
+								<input
+									type="text"
+									value={node.managementNic.name}
+									onChange={(e) => updateNicField(node.id, "managementNic", "name", e.target.value)}
+									className={`input-field ${
+										isInterfaceNameDuplicate(node, "management", node.managementNic.name)
+											? "border-red-500 bg-red-50"
+											: ""
+									}`}
+									placeholder="NIC name (e.g., ens3)"
+								/>
+								{isInterfaceNameDuplicate(node, "management", node.managementNic.name) && (
+									<p className="text-xs text-red-600 mt-1">
+										Interface name already used on this node
+									</p>
+								)}
+							</div>
 							<input
 								type="text"
 								value={node.managementNic.ip}
@@ -532,13 +557,24 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						</div>
 						{node.tunnelNic && (
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-								<input
-									type="text"
-									value={node.tunnelNic.name}
-									onChange={(e) => updateNicField(node.id, "tunnelNic", "name", e.target.value)}
-									className="input-field"
-									placeholder="NIC name (e.g., ens4)"
-								/>
+								<div>
+									<input
+										type="text"
+										value={node.tunnelNic.name}
+										onChange={(e) => updateNicField(node.id, "tunnelNic", "name", e.target.value)}
+										className={`input-field ${
+											isInterfaceNameDuplicate(node, "tunnel", node.tunnelNic.name)
+												? "border-red-500 bg-red-50"
+												: ""
+										}`}
+										placeholder="NIC name (e.g., ens4)"
+									/>
+									{isInterfaceNameDuplicate(node, "tunnel", node.tunnelNic.name) && (
+										<p className="text-xs text-red-600 mt-1">
+											Interface name already used on this node
+										</p>
+									)}
+								</div>
 								<input
 									type="text"
 									value={node.tunnelNic.ip}
@@ -593,13 +629,24 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						</div>
 						{node.externalNic && (
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-								<input
-									type="text"
-									value={node.externalNic.name}
-									onChange={(e) => updateNicField(node.id, "externalNic", "name", e.target.value)}
-									className="input-field"
-									placeholder="NIC name (e.g., ens5)"
-								/>
+								<div>
+									<input
+										type="text"
+										value={node.externalNic.name}
+										onChange={(e) => updateNicField(node.id, "externalNic", "name", e.target.value)}
+										className={`input-field ${
+											isInterfaceNameDuplicate(node, "external", node.externalNic.name)
+												? "border-red-500 bg-red-50"
+												: ""
+										}`}
+										placeholder="NIC name (e.g., ens5)"
+									/>
+									{isInterfaceNameDuplicate(node, "external", node.externalNic.name) && (
+										<p className="text-xs text-red-600 mt-1">
+											Interface name already used on this node
+										</p>
+									)}
+								</div>
 								<input
 									type="text"
 									value={node.externalNic.ip}
@@ -648,15 +695,26 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 							</div>
 							{node.vipExternalNic && (
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<input
-										type="text"
-										value={node.vipExternalNic.name}
-										onChange={(e) =>
-											updateNicField(node.id, "vipExternalNic", "name", e.target.value)
-										}
-										className="input-field"
-										placeholder="NIC name (e.g., ens5)"
-									/>
+									<div>
+										<input
+											type="text"
+											value={node.vipExternalNic.name}
+											onChange={(e) =>
+												updateNicField(node.id, "vipExternalNic", "name", e.target.value)
+											}
+											className={`input-field ${
+												isInterfaceNameDuplicate(node, "vipExternal", node.vipExternalNic.name)
+													? "border-red-500 bg-red-50"
+													: ""
+											}`}
+											placeholder="NIC name (e.g., ens5)"
+										/>
+										{isInterfaceNameDuplicate(node, "vipExternal", node.vipExternalNic.name) && (
+											<p className="text-xs text-red-600 mt-1">
+												Interface name already used on this node
+											</p>
+										)}
+									</div>
 									<input
 										type="text"
 										value={node.vipExternalNic.ip}

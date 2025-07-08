@@ -255,6 +255,7 @@ export class SpecificationService {
 			"⚠️  Interface Constraints: Compute nodes cannot have external interfaces",
 			"⚠️  Interface Constraints: Network/Compute/Storage nodes require tunnel interfaces",
 			"⚠️  Interface Constraints: Hybrid nodes with controller + other roles require tunnel interfaces",
+			"⚠️  Interface Constraints: Each node must use unique interface names (no duplicate ens3, ens4, etc.)",
 			"⚠️  Floating IP Constraint: At least one network node must have an external interface",
 		];
 
@@ -306,6 +307,25 @@ export class SpecificationService {
 		// Constraint-specific recommendations
 		const invalidNodes = [];
 		for (const node of nodes) {
+			// Check for duplicate interface names within the same node
+			const interfaceNames: string[] = [];
+			const interfaces = [
+				{ type: "Management", nic: node.managementNic },
+				{ type: "Tunnel", nic: node.tunnelNic },
+				{ type: "External", nic: node.externalNic },
+				{ type: "VIP External", nic: node.vipExternalNic },
+			].filter((item) => item.nic && item.nic.name && item.nic.name.trim());
+
+			for (const iface of interfaces) {
+				const nicName = iface.nic!.name.trim();
+				if (interfaceNames.includes(nicName)) {
+					invalidNodes.push(`${node.hostname} (duplicate interface name '${nicName}')`);
+					break;
+				} else {
+					interfaceNames.push(nicName);
+				}
+			}
+
 			// Check for constraint violations
 			if (node.type === "controller" && node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (controller with tunnel interface)`);

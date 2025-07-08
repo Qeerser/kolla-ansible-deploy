@@ -150,22 +150,36 @@ const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({ nodes, netw
 			{/* Network Configuration Summary */}
 			<div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
 				<h3 className="font-semibold text-lg mb-3">Network Configuration Summary</h3>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
 					<div>
-						<span className="font-medium">Kolla Internal VIP:</span>
-						<div className="text-blue-600">{networkConfig.kollaIntVipAddr}</div>
+						<span className="font-medium">Management Network:</span>
+						<div className="text-blue-600">{networkConfig.managementCidr}</div>
+					</div>
+					<div>
+						<span className="font-medium">Tunnel Network:</span>
+						<div className="text-green-600">{networkConfig.tunnelCidr}</div>
 					</div>
 					<div>
 						<span className="font-medium">External Network:</span>
-						<div className="text-green-600">{networkConfig.externalCidr}</div>
+						<div className="text-purple-600">{networkConfig.externalCidr}</div>
 					</div>
+					<div>
+						<span className="font-medium">Kolla Internal VIP:</span>
+						<div className="text-indigo-600">{networkConfig.kollaIntVipAddr}</div>
+					</div>
+					{networkConfig.vipExternalIp && (
+						<div>
+							<span className="font-medium">External VIP:</span>
+							<div className="text-cyan-600">{networkConfig.vipExternalIp}</div>
+						</div>
+					)}
 					<div>
 						<span className="font-medium">External Gateway:</span>
-						<div className="text-purple-600">{networkConfig.extGatewayIp}</div>
+						<div className="text-orange-600">{networkConfig.extGatewayIp}</div>
 					</div>
 					<div>
-						<span className="font-medium">IP Range:</span>
-						<div className="text-orange-600">
+						<span className="font-medium">External IP Range:</span>
+						<div className="text-pink-600">
 							{networkConfig.extStartIp} - {networkConfig.extEndIp}
 						</div>
 					</div>
@@ -175,7 +189,7 @@ const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({ nodes, netw
 					</div>
 					<div>
 						<span className="font-medium">Total Nodes:</span>
-						<div className="text-indigo-600 font-semibold">{nodes.length}</div>
+						<div className="text-slate-600 font-semibold">{nodes.length}</div>
 					</div>
 				</div>
 
@@ -213,11 +227,7 @@ const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({ nodes, netw
 				<div className="relative">
 					<div className="text-center mb-4">
 						<h3 className="text-lg font-semibold text-gray-700 bg-blue-100 inline-block px-4 py-2 rounded-full">
-							Management Network (
-							{nodes.length > 0
-								? nodes[0].managementNic.ip.split(".").slice(0, 3).join(".")
-								: "172.16.38"}
-							.0/24)
+							Management Network ({networkConfig.managementCidr})
 						</h3>
 					</div>
 
@@ -243,11 +253,11 @@ const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({ nodes, netw
 				</div>
 
 				{/* Tunnel Network - for network, compute, and hybrid nodes */}
-				{(networkNodes.length > 0 || computeNodes.length > 0 || hybridNodes.length > 0) && (
+				{(networkNodes.length > 0 || computeNodes.length > 0 || storageNodes.length > 0 || hybridNodes.length > 0) && (
 					<div className="relative mt-12">
 						<div className="text-center mb-4">
 							<h3 className="text-lg font-semibold text-gray-700 bg-green-100 inline-block px-4 py-2 rounded-full">
-								Tunnel Network (10.77.0.0/24)
+								Tunnel Network ({networkConfig.tunnelCidr})
 							</h3>
 						</div>
 
@@ -255,7 +265,7 @@ const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({ nodes, netw
 						<div className="absolute top-1/2 left-0 right-0 h-1 bg-green-300 transform -translate-y-1/2 z-0"></div>
 
 						<div className="relative z-10 flex flex-wrap justify-center gap-6">
-							{[...networkNodes, ...computeNodes, ...hybridNodes]
+							{[...networkNodes, ...computeNodes, ...hybridNodes , ...storageNodes]
 								.filter((node) => node.tunnelNic)
 								.map((node) => (
 									<div key={node.id} className="text-center">

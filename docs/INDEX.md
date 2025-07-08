@@ -7,6 +7,7 @@ This folder contains all the project documentation files for the Kolla OpenStack
 -   **[IMPLEMENTATION_SUMMARY_v2.md](./IMPLEMENTATION_SUMMARY_v2.md)** - Comprehensive overview of the v2.0 refactoring and modernization
 -   **[REFACTORING_SUMMARY.md](./REFACTORING_SUMMARY.md)** - Initial refactoring documentation and approach
 -   **[CONSTRAINT_IMPLEMENTATION_SUMMARY.md](./CONSTRAINT_IMPLEMENTATION_SUMMARY.md)** - Complete summary of all constraint implementations
+-   **[INTERFACE_NAME_CONSTRAINT.md](./INTERFACE_NAME_CONSTRAINT.md)** - Interface name uniqueness constraint implementation
 
 ## 🔄 Version Upgrades & Changes
 

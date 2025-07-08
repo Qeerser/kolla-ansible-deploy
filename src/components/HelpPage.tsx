@@ -191,6 +191,49 @@ const HelpPage: React.FC = () => {
 					</div>
 				</section>
 
+				{/* Interface Constraints */}
+				<section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+					<h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+						<WifiIcon className="h-6 w-6 mr-2 text-red-600" />
+						Interface Constraints
+					</h3>
+					<div className="space-y-4">
+						<div className="border border-red-200 rounded-lg p-4 bg-red-50">
+							<h4 className="font-semibold text-lg mb-2 text-red-700">Interface Name Requirements</h4>
+							<p className="text-gray-700 text-sm mb-2">
+								Each node must use unique interface names for all its network interfaces
+							</p>
+							<div className="text-sm text-red-700">
+								<p>
+									<strong>❌ Invalid:</strong> Management (ens3), Tunnel (ens3), External (ens4)
+								</p>
+								<p>
+									<strong>✅ Valid:</strong> Management (ens3), Tunnel (ens4), External (ens5)
+								</p>
+								<p className="mt-2">
+									<strong>Note:</strong> Interface names like ens3, ens4, ens5 must be unique within
+									each node
+								</p>
+							</div>
+						</div>
+
+						<div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+							<h4 className="font-semibold text-lg mb-2 text-yellow-700">Floating IP Requirement</h4>
+							<p className="text-gray-700 text-sm mb-2">
+								At least one network node (or hybrid with network role) must have an external interface
+							</p>
+							<div className="text-sm text-yellow-700">
+								<p>
+									<strong>Purpose:</strong> Required for OpenStack floating IP functionality
+								</p>
+								<p>
+									<strong>Without this:</strong> Virtual machines cannot access external networks
+								</p>
+							</div>
+						</div>
+					</div>
+				</section>
+
 				{/* Storage Configuration */}
 				<section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
 					<h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
