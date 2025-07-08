@@ -103,7 +103,7 @@ export class SpecificationService {
 					cpuCores: 6,
 					ram: "16GB",
 					storage: ["80GB (OS)"],
-					networkInterfaces: 2, // Management + External (no tunnel allowed)
+					networkInterfaces: 1, // Management only (no tunnel, no external)
 					description: "Controller node - manages OpenStack services, no tunnel interface",
 				};
 			case "network":
@@ -119,8 +119,8 @@ export class SpecificationService {
 					cpuCores: 6,
 					ram: "16GB",
 					storage: ["100GB (OS)"],
-					networkInterfaces: 2, // Management + Tunnel (no external allowed)
-					description: "Compute node - hosts VMs, requires tunnel interface, no external interface",
+					networkInterfaces: 2, // Management + Tunnel only
+					description: "Compute node - hosts VMs, requires tunnel interface",
 				};
 			case "storage":
 				return {
@@ -252,7 +252,6 @@ export class SpecificationService {
 			"Allocate at least 20% extra disk space beyond minimum requirements",
 			"Enable container runtime (Docker) on all nodes before deployment",
 			"⚠️  Interface Constraints: Controller nodes cannot have tunnel interfaces (unless hybrid with other roles)",
-			"⚠️  Interface Constraints: Compute nodes cannot have external interfaces",
 			"⚠️  Interface Constraints: Only network nodes (or hybrid with network role) can have external interfaces",
 			"⚠️  Interface Constraints: Network/Compute/Storage nodes require tunnel interfaces",
 			"⚠️  Interface Constraints: Hybrid nodes with controller + other roles require tunnel interfaces",
@@ -331,21 +330,18 @@ export class SpecificationService {
 			if (node.type === "controller" && node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (controller with tunnel interface)`);
 			}
-			if (node.type === "controller" && node.externalNic) {
-				invalidNodes.push(`${node.hostname} (controller with external interface - only network nodes allowed)`);
+
+			// UNIFIED EXTERNAL INTERFACE CONSTRAINT: Only network nodes or hybrid with network role can have external interface
+			if (node.externalNic) {
+				const canHaveExternal =
+					node.type === "network" || (node.type === "hybrid" && node.hybridRoles?.network);
+				if (!canHaveExternal) {
+					invalidNodes.push(
+						`${node.hostname} (external interface not allowed - only network nodes or hybrid with network role)`
+					);
+				}
 			}
-			if (node.type === "storage" && node.externalNic) {
-				invalidNodes.push(`${node.hostname} (storage with external interface - only network nodes allowed)`);
-			}
-			if (
-				(node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) &&
-				node.externalNic
-			) {
-				invalidNodes.push(`${node.hostname} (compute with external interface)`);
-			}
-			if (node.type === "hybrid" && node.externalNic && node.hybridRoles && !node.hybridRoles.network) {
-				invalidNodes.push(`${node.hostname} (hybrid with external interface but no network role)`);
-			}
+
 			if ((node.type === "network" || node.type === "compute" || node.type === "storage") && !node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (${node.type} without tunnel interface)`);
 			}

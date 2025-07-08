@@ -162,30 +162,20 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 		}
 
 		if (node.type === "compute") {
-			// Compute nodes must have tunnel interface and cannot have external interface
+			// Compute nodes must have tunnel interface
 			if (!node.tunnelNic?.ip) {
 				details.push(`Compute node ${node.hostname} must have a tunnel interface.`);
 				isValid = false;
 			}
-			if (node.externalNic?.ip) {
-				details.push(`Compute node ${node.hostname} cannot have an external interface.`);
-				isValid = false;
-			}
 		}
 
-		if (node.type === "storage") {
-			// Storage nodes cannot have external interface
-			if (node.externalNic?.ip) {
-				details.push(`Storage node ${node.hostname} cannot have an external interface.`);
-				isValid = false;
-			}
-		}
+		// UNIFIED EXTERNAL INTERFACE CONSTRAINT: Only network nodes or hybrid with network role can have external interface
+		if (node.externalNic?.ip) {
+			const canHaveExternal = node.type === "network" || (node.type === "hybrid" && node.hybridRoles?.network);
 
-		if (node.type === "controller") {
-			// Controller nodes cannot have external interface (only network nodes can)
-			if (node.externalNic?.ip) {
+			if (!canHaveExternal) {
 				details.push(
-					`Controller node ${node.hostname} cannot have an external interface. Only network nodes can have external interfaces.`
+					`${node.hostname} cannot have an external interface. Only network nodes or hybrid nodes with network role can have external interfaces.`
 				);
 				isValid = false;
 			}
@@ -217,24 +207,12 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 				isValid = false;
 			}
 
-			// If hybrid has compute role, it must have tunnel interface and cannot have external interface
+			// If hybrid has compute role, it must have tunnel interface
 			if (node.hybridRoles.compute) {
 				if (!node.tunnelNic?.ip) {
 					details.push(`Hybrid node ${node.hostname} with compute role must have a tunnel interface.`);
 					isValid = false;
 				}
-				if (node.externalNic?.ip) {
-					details.push(`Hybrid node ${node.hostname} with compute role cannot have an external interface.`);
-					isValid = false;
-				}
-			}
-
-			// Only hybrid nodes with network role can have external interface
-			if (node.externalNic?.ip && !node.hybridRoles.network) {
-				details.push(
-					`Hybrid node ${node.hostname} can only have an external interface if it has the network role.`
-				);
-				isValid = false;
 			}
 
 			// If hybrid has network role, it must have tunnel interface

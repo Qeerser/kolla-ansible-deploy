@@ -71,14 +71,14 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						delete updatedNode.hybridRoles;
 						break;
 					case "compute":
-						// Compute nodes cannot have external interface
+						// Compute nodes need tunnel interface
 						delete updatedNode.externalNic;
 						delete updatedNode.storageDisks;
 						delete updatedNode.vipExternalNic;
 						delete updatedNode.hybridRoles;
 						break;
 					case "storage":
-						// Storage nodes cannot have external interface
+						// Storage nodes need tunnel interface
 						delete updatedNode.externalNic;
 						delete updatedNode.vipExternalNic;
 						delete updatedNode.hybridRoles;
@@ -157,7 +157,7 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 
 			if (role === "compute") {
 				if (enabled) {
-					// If compute role is enabled, remove external interface and ensure tunnel exists
+					// Compute role: remove external interface (unified constraint handles this)
 					delete updatedNode.externalNic;
 					if (!updatedNode.tunnelNic) {
 						const tunnelIP = generateNextAvailableIP("hybrid", "tunnel", networkConfig, nodes);
@@ -168,7 +168,7 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 
 			if (role === "network") {
 				if (enabled) {
-					// If network role is enabled, ensure tunnel exists
+					// Network role: ensure tunnel exists
 					if (!updatedNode.tunnelNic) {
 						const tunnelIP = generateNextAvailableIP("hybrid", "tunnel", networkConfig, nodes);
 						updatedNode.tunnelNic = { id: Date.now().toString(), name: "ens4", ip: tunnelIP };
@@ -451,20 +451,6 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 										<strong>Error:</strong> Hybrid nodes with controller and other roles must have
 										tunnel interfaces for non-controller services. This will cause deployment
 										validation to fail.
-									</p>
-								</div>
-							</div>
-						)}
-
-					{/* Warning for compute external interface */}
-					{(node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) &&
-						node.externalNic && (
-							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-								<div className="flex items-center">
-									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
-									<p className="text-sm text-red-800">
-										<strong>Error:</strong> Compute nodes cannot have external interfaces. This will
-										cause deployment validation to fail.
 									</p>
 								</div>
 							</div>
