@@ -44,18 +44,21 @@ export class SpecificationService {
 	private static generateNodeSpecifications(nodes: Node[]): NodeSpecification[] {
 		return nodes.map((node) => {
 			const spec = this.getBaseSpecForNodeType(node.type);
-			
+
 			// Adjust for hybrid nodes
 			if (node.type === "hybrid" && node.hybridRoles) {
 				spec.cpuCores = this.calculateHybridCpuCores(node.hybridRoles);
 				spec.ram = this.calculateHybridRam(node.hybridRoles);
 				spec.storage = this.calculateHybridStorage(node.hybridRoles);
-				spec.description = `Hybrid node: ${Object.entries(node.hybridRoles).filter(([, enabled]) => enabled).map(([role]) => role).join(", ")}`;
+				spec.description = `Hybrid node: ${Object.entries(node.hybridRoles)
+					.filter(([, enabled]) => enabled)
+					.map(([role]) => role)
+					.join(", ")}`;
 			}
 
 			// Adjust storage based on actual storage disks configured
 			if (node.storageDisks && node.storageDisks.length > 0) {
-				const storageDisks = node.storageDisks.map(disk => `80GB (${disk.volumeGroup})`);
+				const storageDisks = node.storageDisks.map((disk) => `80GB (${disk.volumeGroup})`);
 				if (spec.storage.length > 1) {
 					spec.storage = [spec.storage[0], ...storageDisks];
 				} else {
@@ -87,7 +90,7 @@ export class SpecificationService {
 					ram: "16GB",
 					storage: ["80GB (OS)"],
 					networkInterfaces: 2,
-					description: "Controller node for OpenStack management services"
+					description: "Controller node for OpenStack management services",
 				};
 			case "network":
 				return {
@@ -95,7 +98,7 @@ export class SpecificationService {
 					ram: "10GB",
 					storage: ["80GB (OS)"],
 					networkInterfaces: 3,
-					description: "Network node for Neutron networking services"
+					description: "Network node for Neutron networking services",
 				};
 			case "compute":
 				return {
@@ -103,7 +106,7 @@ export class SpecificationService {
 					ram: "16GB",
 					storage: ["100GB (OS)", "80GB (Cinder storage)"],
 					networkInterfaces: 2,
-					description: "Compute node for hosting virtual machines"
+					description: "Compute node for hosting virtual machines",
 				};
 			case "storage":
 				return {
@@ -111,7 +114,7 @@ export class SpecificationService {
 					ram: "8GB",
 					storage: ["80GB (OS)", "200GB+ (Block storage)"],
 					networkInterfaces: 2,
-					description: "Dedicated storage node for Cinder volumes"
+					description: "Dedicated storage node for Cinder volumes",
 				};
 			case "hybrid":
 				return {
@@ -119,7 +122,7 @@ export class SpecificationService {
 					ram: "24GB",
 					storage: ["120GB (OS)", "100GB (Storage)"],
 					networkInterfaces: 3,
-					description: "Multi-role node combining multiple services"
+					description: "Multi-role node combining multiple services",
 				};
 			default:
 				return {
@@ -127,7 +130,7 @@ export class SpecificationService {
 					ram: "8GB",
 					storage: ["80GB (OS)"],
 					networkInterfaces: 2,
-					description: "Generic OpenStack node"
+					description: "Generic OpenStack node",
 				};
 		}
 	}
@@ -161,11 +164,11 @@ export class SpecificationService {
 	 */
 	private static calculateHybridStorage(roles: HybridRoles): string[] {
 		const storage = ["100GB (OS)"];
-		
+
 		if (roles.compute || roles.storage) {
 			storage.push("80GB (Cinder storage)");
 		}
-		
+
 		return storage;
 	}
 
@@ -177,11 +180,11 @@ export class SpecificationService {
 			(acc, spec) => {
 				acc.cpu += spec.cpuCores;
 				acc.ram += parseInt(spec.ram.replace(/[^\d]/g, ""));
-				
+
 				// Calculate total storage (just primary OS disk for total)
 				const primaryStorage = parseInt(spec.storage[0].replace(/[^\d]/g, ""));
 				acc.storage += primaryStorage;
-				
+
 				return acc;
 			},
 			{ cpu: 0, ram: 0, storage: 0 }
@@ -214,7 +217,9 @@ export class SpecificationService {
 		}
 
 		// Count required NICs
-		const hasNetworkNode = nodes.some(node => node.type === "network" || (node.type === "hybrid" && node.hybridRoles?.network));
+		const hasNetworkNode = nodes.some(
+			(node) => node.type === "network" || (node.type === "hybrid" && node.hybridRoles?.network)
+		);
 		const requiredNics = hasNetworkNode ? "2-3" : "2";
 		requirements.push(`Required NICs per node: ${requiredNics}`);
 
@@ -226,17 +231,24 @@ export class SpecificationService {
 	 */
 	private static generateRecommendations(nodes: Node[], networkConfig: NetworkConfig): string[] {
 		const recommendations = [
-			"Use Ubuntu 22.04 LTS with generic kernel for better compatibility",
-			"Ensure all hosts have synchronized time (NTP)",
+			"Use Debian 12 (Bookworm) with latest kernel for Kolla-Ansible 2025.1 compatibility",
+			"Ensure all hosts have synchronized time (chrony/NTP service)",
 			"Configure SSH key-based authentication between all nodes",
 			"Use dedicated physical networks for management and tunnel traffic when possible",
 			"Allocate at least 20% extra disk space beyond minimum requirements",
+			"Enable container runtime (Docker) on all nodes before deployment",
 		];
 
 		// Node-specific recommendations
-		const controllerNodes = nodes.filter(n => n.type === "controller" || (n.type === "hybrid" && n.hybridRoles?.controller));
-		const computeNodes = nodes.filter(n => n.type === "compute" || (n.type === "hybrid" && n.hybridRoles?.compute));
-		const networkNodes = nodes.filter(n => n.type === "network" || (n.type === "hybrid" && n.hybridRoles?.network));
+		const controllerNodes = nodes.filter(
+			(n) => n.type === "controller" || (n.type === "hybrid" && n.hybridRoles?.controller)
+		);
+		const computeNodes = nodes.filter(
+			(n) => n.type === "compute" || (n.type === "hybrid" && n.hybridRoles?.compute)
+		);
+		const networkNodes = nodes.filter(
+			(n) => n.type === "network" || (n.type === "hybrid" && n.hybridRoles?.network)
+		);
 
 		if (controllerNodes.length === 1) {
 			recommendations.push("⚠️  Single controller setup: Consider HA setup for production environments");
@@ -251,10 +263,11 @@ export class SpecificationService {
 		}
 
 		// Storage recommendations
-		const nodesWithStorage = nodes.filter(n => 
-			n.type === "storage" || 
-			n.type === "compute" || 
-			(n.type === "hybrid" && (n.hybridRoles?.storage || n.hybridRoles?.compute))
+		const nodesWithStorage = nodes.filter(
+			(n) =>
+				n.type === "storage" ||
+				n.type === "compute" ||
+				(n.type === "hybrid" && (n.hybridRoles?.storage || n.hybridRoles?.compute))
 		);
 
 		if (nodesWithStorage.length > 0) {

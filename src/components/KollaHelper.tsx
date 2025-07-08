@@ -1,5 +1,12 @@
 import React from "react";
-import { CloudIcon, ServerIcon, PlusIcon, EyeIcon, InformationCircleIcon, CpuChipIcon } from "@heroicons/react/24/outline";
+import {
+	CloudIcon,
+	ServerIcon,
+	PlusIcon,
+	EyeIcon,
+	InformationCircleIcon,
+	CpuChipIcon,
+} from "@heroicons/react/24/outline";
 import { useNodes, useNetworkConfig, useActiveTab, useValidation } from "../hooks/useAppStore.js";
 import { generateNextNodeId, generateDefaultNode } from "../utils/nodeUtils.js";
 import { validateConfiguration } from "../utils/validation.js";

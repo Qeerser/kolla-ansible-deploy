@@ -10,12 +10,17 @@ interface TutorialGeneratorProps {
 
 const TutorialGenerator: React.FC<TutorialGeneratorProps> = ({ nodes, networkConfig }) => {
 	const [copiedIndex, setCopiedIndex] = useState<string | number | null>(null);
+	const [copiedType, setCopiedType] = useState<string | null>(null);
 
-	const copyToClipboard = async (text: string, index: string | number) => {
+	const copyToClipboard = async (text: string, index: string | number, type?: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
 			setCopiedIndex(index);
-			setTimeout(() => setCopiedIndex(null), 2000);
+			setCopiedType(type || null);
+			setTimeout(() => {
+				setCopiedIndex(null);
+				setCopiedType(null);
+			}, 2000);
 		} catch (err) {
 			console.error("Failed to copy text: ", err);
 		}
@@ -26,7 +31,7 @@ const TutorialGenerator: React.FC<TutorialGeneratorProps> = ({ nodes, networkCon
 	return (
 		<div className="glass-card p-6">
 			<h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-				🚀 OpenStack Installation Tutorial
+				🚀 OpenStack Kolla-Ansible 2025.1 Installation Tutorial (Debian 12)
 			</h2>
 
 			<div className="space-y-6">
@@ -46,6 +51,7 @@ const TutorialGenerator: React.FC<TutorialGeneratorProps> = ({ nodes, networkCon
 								index={step.id}
 								onCopy={copyToClipboard}
 								copiedIndex={copiedIndex}
+								copiedType={copiedType || undefined}
 							/>
 						</div>
 					</div>

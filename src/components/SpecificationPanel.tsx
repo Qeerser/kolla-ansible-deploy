@@ -19,11 +19,9 @@ const SpecificationPanel: React.FC<SpecificationPanelProps> = ({ nodes, networkC
 			{/* Hardware Specifications Table */}
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
 				<div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
-					<h3 className="text-lg font-semibold text-gray-800">
-						💻 Minimum Hardware Specifications
-					</h3>
+					<h3 className="text-lg font-semibold text-gray-800">💻 Minimum Hardware Specifications</h3>
 				</div>
-				
+
 				<div className="p-6 overflow-x-auto">
 					<table className="w-full table-auto border-collapse">
 						<thead>
@@ -51,12 +49,8 @@ const SpecificationPanel: React.FC<SpecificationPanelProps> = ({ nodes, networkC
 									<td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
 										{node.name}
 									</td>
-									<td className="border border-gray-300 px-4 py-2 text-gray-700">
-										{node.cpuCores}
-									</td>
-									<td className="border border-gray-300 px-4 py-2 text-gray-700">
-										{node.ram}
-									</td>
+									<td className="border border-gray-300 px-4 py-2 text-gray-700">{node.cpuCores}</td>
+									<td className="border border-gray-300 px-4 py-2 text-gray-700">{node.ram}</td>
 									<td className="border border-gray-300 px-4 py-2 text-gray-700">
 										<div className="space-y-1">
 											{node.storage.map((storage, idx) => (
@@ -79,21 +73,15 @@ const SpecificationPanel: React.FC<SpecificationPanelProps> = ({ nodes, networkC
 			{/* System Summary */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 				<div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-					<div className="text-blue-800 font-semibold text-lg">
-						{specification.totalCpuCores}
-					</div>
+					<div className="text-blue-800 font-semibold text-lg">{specification.totalCpuCores}</div>
 					<div className="text-blue-600 text-sm">Total CPU Cores</div>
 				</div>
 				<div className="bg-green-50 rounded-lg p-4 border border-green-200">
-					<div className="text-green-800 font-semibold text-lg">
-						{specification.totalRam}GB
-					</div>
+					<div className="text-green-800 font-semibold text-lg">{specification.totalRam}GB</div>
 					<div className="text-green-600 text-sm">Total RAM</div>
 				</div>
 				<div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-					<div className="text-purple-800 font-semibold text-lg">
-						{specification.totalStorage}GB+
-					</div>
+					<div className="text-purple-800 font-semibold text-lg">{specification.totalStorage}GB+</div>
 					<div className="text-purple-600 text-sm">Total Storage</div>
 				</div>
 			</div>
@@ -101,11 +89,9 @@ const SpecificationPanel: React.FC<SpecificationPanelProps> = ({ nodes, networkC
 			{/* Network Requirements */}
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
 				<div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
-					<h3 className="text-lg font-semibold text-gray-800">
-						🌐 Network Requirements
-					</h3>
+					<h3 className="text-lg font-semibold text-gray-800">🌐 Network Requirements</h3>
 				</div>
-				
+
 				<div className="p-6">
 					<ul className="space-y-2">
 						{specification.networkRequirements.map((req, index) => (
@@ -121,11 +107,9 @@ const SpecificationPanel: React.FC<SpecificationPanelProps> = ({ nodes, networkC
 			{/* Recommendations */}
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200">
 				<div className="bg-gradient-to-r from-yellow-50 to-orange-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
-					<h3 className="text-lg font-semibold text-gray-800">
-						💡 Deployment Recommendations
-					</h3>
+					<h3 className="text-lg font-semibold text-gray-800">💡 Deployment Recommendations</h3>
 				</div>
-				
+
 				<div className="p-6">
 					<ul className="space-y-3">
 						{specification.recommendations.map((rec, index) => (
@@ -141,9 +125,9 @@ const SpecificationPanel: React.FC<SpecificationPanelProps> = ({ nodes, networkC
 			{/* Note about VM creation */}
 			<div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
 				<p className="text-blue-800 text-sm">
-					<strong>Note:</strong> These specifications are based on your current configuration. 
-					The original implementation used QEMU-KVM and cloud-init for VM creation. 
-					You can adjust resources based on your workload requirements and available hardware.
+					<strong>Note:</strong> These specifications are based on your current configuration. The original
+					implementation used QEMU-KVM and cloud-init for VM creation. You can adjust resources based on your
+					workload requirements and available hardware.
 				</p>
 			</div>
 		</div>
