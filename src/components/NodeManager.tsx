@@ -32,6 +32,17 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 		return false;
 	};
 
+	const canHaveTunnelInterface = (node: Node): boolean => {
+		if (node.type === "controller") return false;
+		if (node.type === "hybrid" &&
+		!(
+			node.hybridRoles?.network ||
+			node.hybridRoles?.compute ||
+			node.hybridRoles?.storage
+		)) return false;
+		return true;
+	};
+
 	const updateNodeField = (nodeId: string, field: keyof Node, value: string | Node["type"]) => {
 		const node = nodes.find((n) => n.id === nodeId);
 		if (node) {
@@ -489,7 +500,7 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 					</div>
 
 					{/* Tunnel NIC */}
-					<div className="mb-4">
+					{canHaveTunnelInterface(node) && (<div className="mb-4">
 						<div className="flex items-center justify-between mb-2">
 							<h4 className="text-md font-medium text-gray-700">Tunnel Network Interface</h4>
 							{!node.tunnelNic ? (
@@ -593,7 +604,7 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 									: "Hybrid nodes with only controller role cannot have tunnel interfaces"}
 							</p>
 						)}
-					</div>
+					</div>)}
 
 					{/* External NIC - Only for network nodes or hybrid with network role */}
 					{canHaveExternalInterface(node) && (

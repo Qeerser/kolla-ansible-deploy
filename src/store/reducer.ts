@@ -14,7 +14,7 @@ export const initialState: AppState = {
 			id: "2",
 			hostname: "network01",
 			type: "network",
-            externalNic: { id: "en1", name: "ens4", ip: "" },
+            externalNic: { id: "en1", name: "ens5", ip: "" },
 			managementNic: { id: "mn2", name: "ens3", ip: "172.16.100.21" },
 			tunnelNic: { id: "tn2", name: "ens4", ip: "192.168.100.21" },
 		},
