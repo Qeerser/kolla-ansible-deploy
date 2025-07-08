@@ -118,7 +118,7 @@ export class SpecificationService {
 				return {
 					cpuCores: 6,
 					ram: "16GB",
-					storage: ["100GB (OS)", "80GB (Cinder storage)"],
+					storage: ["100GB (OS)"],
 					networkInterfaces: 2, // Management + Tunnel (no external allowed)
 					description: "Compute node - hosts VMs, requires tunnel interface, no external interface",
 				};

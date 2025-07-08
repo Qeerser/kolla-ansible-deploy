@@ -79,9 +79,6 @@ const HelpPage: React.FC = () => {
 								<p>
 									<strong>Services:</strong> Nova Compute, Neutron OVS agent
 								</p>
-								<p>
-									<strong>Note:</strong> Can also act as storage node
-								</p>
 							</div>
 						</div>
 
@@ -144,7 +141,7 @@ const HelpPage: React.FC = () => {
 									<strong>Required:</strong> All nodes
 								</p>
 								<p>
-									<strong>Example:</strong> 172.16.38.0/24
+									<strong>Example:</strong> 172.16.100.0/24
 								</p>
 								<p>
 									<strong>Interface:</strong> ens3
@@ -162,7 +159,7 @@ const HelpPage: React.FC = () => {
 									<strong>Required:</strong> Network, Compute, Storage nodes
 								</p>
 								<p>
-									<strong>Example:</strong> 10.77.0.0/24
+									<strong>Example:</strong> 192.168.100.0/24
 								</p>
 								<p>
 									<strong>Interface:</strong> ens4
@@ -296,7 +293,7 @@ const HelpPage: React.FC = () => {
 									<strong>Network:</strong> Management network
 								</p>
 								<p>
-									<strong>Example:</strong> 172.16.38.254
+									<strong>Example:</strong> 172.16.100.254
 								</p>
 							</div>
 						</div>
@@ -316,7 +313,7 @@ const HelpPage: React.FC = () => {
 									<strong>Requirement:</strong> Controller must have external interface
 								</p>
 								<p>
-									<strong>Example:</strong> 10.90.38.254
+									<strong>Example:</strong> 10.100.0.254
 								</p>
 							</div>
 						</div>
