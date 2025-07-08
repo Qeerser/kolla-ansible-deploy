@@ -119,8 +119,13 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 			// Handle constraints when hybrid roles change
 			if (role === "controller") {
 				if (enabled) {
-					// If controller role is enabled, remove tunnel interface
-					delete updatedNode.tunnelNic;
+					// If controller role is enabled, check if other roles exist
+					const hasOtherRoles = updatedNode.hybridRoles.network || updatedNode.hybridRoles.compute || updatedNode.hybridRoles.storage;
+					if (!hasOtherRoles) {
+						// If ONLY controller role, remove tunnel interface
+						delete updatedNode.tunnelNic;
+					}
+					// If controller + other roles, keep tunnel interface for other roles
 				} else {
 					// If controller role is disabled, remove VIP external NIC
 					delete updatedNode.vipExternalNic;
@@ -171,9 +176,9 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 				}
 			}
 
-			// If no roles requiring tunnel interface are enabled, and controller is enabled, remove tunnel
-			const needsTunnel = updatedNode.hybridRoles.network || updatedNode.hybridRoles.compute || updatedNode.hybridRoles.storage;
-			if (!needsTunnel && updatedNode.hybridRoles.controller) {
+			// Final check: If ONLY controller role is enabled, remove tunnel interface
+			const hasOtherRoles = updatedNode.hybridRoles.network || updatedNode.hybridRoles.compute || updatedNode.hybridRoles.storage;
+			if (updatedNode.hybridRoles.controller && !hasOtherRoles) {
 				delete updatedNode.tunnelNic;
 			}
 
@@ -369,8 +374,8 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 					{(node.type === "compute" ||
 						node.type === "storage" ||
 						node.type === "network" ||
-						(node.type === "hybrid" && 
-							node.hybridRoles && 
+						(node.type === "hybrid" &&
+							node.hybridRoles &&
 							(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))) &&
 						!node.tunnelNic?.ip && (
 							<div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -388,13 +393,34 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 						)}
 
 					{/* Warning for controller constraints */}
-					{(node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller)) &&
+					{(node.type === "controller" || 
+						(node.type === "hybrid" && 
+							node.hybridRoles?.controller && 
+							!(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))) &&
 						node.tunnelNic?.ip && (
 							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
 								<div className="flex items-center">
 									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
 									<p className="text-sm text-red-800">
-										<strong>Error:</strong> Controller nodes cannot have tunnel interfaces. This will cause deployment validation to fail.
+										<strong>Error:</strong> {node.type === "controller" 
+											? "Controller nodes cannot have tunnel interfaces." 
+											: "Hybrid nodes with only controller role cannot have tunnel interfaces."} This
+										will cause deployment validation to fail.
+									</p>
+								</div>
+							</div>
+						)}
+
+					{/* Warning for hybrid controller + other roles needing tunnel */}
+					{(node.type === "hybrid" && 
+						node.hybridRoles?.controller && 
+						(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage) &&
+						!node.tunnelNic?.ip) && (
+							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+								<div className="flex items-center">
+									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
+									<p className="text-sm text-red-800">
+										<strong>Error:</strong> Hybrid nodes with controller and other roles must have tunnel interfaces for non-controller services. This will cause deployment validation to fail.
 									</p>
 								</div>
 							</div>
@@ -407,7 +433,8 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 								<div className="flex items-center">
 									<div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
 									<p className="text-sm text-red-800">
-										<strong>Error:</strong> Compute nodes cannot have external interfaces. This will cause deployment validation to fail.
+										<strong>Error:</strong> Compute nodes cannot have external interfaces. This will
+										cause deployment validation to fail.
 									</p>
 								</div>
 							</div>
@@ -441,11 +468,25 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 							{!node.tunnelNic ? (
 								<button
 									onClick={() => addNic(node.id, "tunnelNic")}
-									disabled={node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller && 
-										!(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))}
+									disabled={
+										node.type === "controller" ||
+										(node.type === "hybrid" &&
+											node.hybridRoles?.controller &&
+											!(
+												node.hybridRoles.network ||
+												node.hybridRoles.compute ||
+												node.hybridRoles.storage
+											))
+									}
 									className={`text-sm ${
-										node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller && 
-											!(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))
+										node.type === "controller" ||
+										(node.type === "hybrid" &&
+											node.hybridRoles?.controller &&
+											!(
+												node.hybridRoles.network ||
+												node.hybridRoles.compute ||
+												node.hybridRoles.storage
+											))
 											? "text-gray-400 cursor-not-allowed"
 											: "text-blue-500 hover:text-blue-700"
 									}`}
@@ -455,13 +496,25 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 							) : (
 								<button
 									onClick={() => removeNic(node.id, "tunnelNic")}
-									disabled={node.type === "compute" || node.type === "network" || node.type === "storage" ||
-										(node.type === "hybrid" && node.hybridRoles && 
-											(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))}
+									disabled={
+										node.type === "compute" ||
+										node.type === "network" ||
+										node.type === "storage" ||
+										(node.type === "hybrid" &&
+											node.hybridRoles &&
+											(node.hybridRoles.network ||
+												node.hybridRoles.compute ||
+												node.hybridRoles.storage))
+									}
 									className={`text-sm ${
-										node.type === "compute" || node.type === "network" || node.type === "storage" ||
-										(node.type === "hybrid" && node.hybridRoles && 
-											(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))
+										node.type === "compute" ||
+										node.type === "network" ||
+										node.type === "storage" ||
+										(node.type === "hybrid" &&
+											node.hybridRoles &&
+											(node.hybridRoles.network ||
+												node.hybridRoles.compute ||
+												node.hybridRoles.storage))
 											? "text-gray-400 cursor-not-allowed"
 											: "text-red-500 hover:text-red-700"
 									}`}
@@ -488,10 +541,18 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 								/>
 							</div>
 						)}
-						{(node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller && 
-							!(node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage))) && (
+						{(node.type === "controller" ||
+							(node.type === "hybrid" &&
+								node.hybridRoles?.controller &&
+								!(
+									node.hybridRoles.network ||
+									node.hybridRoles.compute ||
+									node.hybridRoles.storage
+								))) && (
 							<p className="text-xs text-gray-500 mt-1">
-								Controller nodes cannot have tunnel interfaces
+								{node.type === "controller" 
+									? "Controller nodes cannot have tunnel interfaces"
+									: "Hybrid nodes with only controller role cannot have tunnel interfaces"}
 							</p>
 						)}
 					</div>
@@ -503,7 +564,9 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 							{!node.externalNic ? (
 								<button
 									onClick={() => addNic(node.id, "externalNic")}
-									disabled={node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)}
+									disabled={
+										node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)
+									}
 									className={`text-sm ${
 										node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)
 											? "text-gray-400 cursor-not-allowed"
@@ -536,20 +599,22 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 									onChange={(e) => updateNicField(node.id, "externalNic", "ip", e.target.value)}
 									className="input-field"
 									placeholder="IP address (optional)"
-									disabled={node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller)}
+									disabled={
+										node.type === "controller" ||
+										(node.type === "hybrid" && node.hybridRoles?.controller)
+									}
 								/>
 							</div>
 						)}
 						{(node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) && (
-							<p className="text-xs text-gray-500 mt-1">
-								Compute nodes cannot have external interfaces
-							</p>
+							<p className="text-xs text-gray-500 mt-1">Compute nodes cannot have external interfaces</p>
 						)}
-						{(node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller)) && node.externalNic && (
-							<p className="text-xs text-gray-500 mt-1">
-								Controller external interfaces should not have static IPs (configured via VIP)
-							</p>
-						)}
+						{(node.type === "controller" || (node.type === "hybrid" && node.hybridRoles?.controller)) &&
+							node.externalNic && (
+								<p className="text-xs text-gray-500 mt-1">
+									Controller external interfaces should not have static IPs (configured via VIP)
+								</p>
+							)}
 					</div>
 
 					{/* VIP External NIC - Only for controller nodes and hybrid nodes with controller role */}
@@ -600,17 +665,21 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 							{node.vipExternalNic && node.vipExternalNic.ip && (
 								<div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
 									<p className="text-sm text-yellow-800">
-										<strong>Warning:</strong> VIP external interface should not have a static IP. Configure external VIP via network settings instead.
+										<strong>Warning:</strong> VIP external interface should not have a static IP.
+										Configure external VIP via network settings instead.
 									</p>
 								</div>
 							)}
-							{node.externalNic && node.vipExternalNic && node.externalNic.name === node.vipExternalNic.name && (
-								<div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-									<p className="text-sm text-red-800">
-										<strong>Error:</strong> External and VIP external interfaces cannot use the same network interface.
-									</p>
-								</div>
-							)}
+							{node.externalNic &&
+								node.vipExternalNic &&
+								node.externalNic.name === node.vipExternalNic.name && (
+									<div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+										<p className="text-sm text-red-800">
+											<strong>Error:</strong> External and VIP external interfaces cannot use the
+											same network interface.
+										</p>
+									</div>
+								)}
 						</div>
 					)}
 

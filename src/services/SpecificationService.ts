@@ -78,7 +78,7 @@ export class SpecificationService {
 			if (node.tunnelNic) interfaces.push("Tunnel");
 			if (node.externalNic) interfaces.push("External");
 			if (node.vipExternalNic) interfaces.push("VIP External");
-			
+
 			const interfaceDetails = `${nicCount} NICs: ${interfaces.join(", ")}`;
 			if (spec.description) {
 				spec.description = `${spec.description} - ${interfaceDetails}`;
@@ -251,9 +251,10 @@ export class SpecificationService {
 			"Use dedicated physical networks for management and tunnel traffic when possible",
 			"Allocate at least 20% extra disk space beyond minimum requirements",
 			"Enable container runtime (Docker) on all nodes before deployment",
-			"⚠️  Interface Constraints: Controller nodes cannot have tunnel interfaces",
+			"⚠️  Interface Constraints: Controller nodes cannot have tunnel interfaces (unless hybrid with other roles)",
 			"⚠️  Interface Constraints: Compute nodes cannot have external interfaces",
 			"⚠️  Interface Constraints: Network/Compute/Storage nodes require tunnel interfaces",
+			"⚠️  Interface Constraints: Hybrid nodes with controller + other roles require tunnel interfaces",
 		];
 
 		// Node-specific recommendations
@@ -308,25 +309,39 @@ export class SpecificationService {
 			if (node.type === "controller" && node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (controller with tunnel interface)`);
 			}
-			if ((node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) && node.externalNic) {
+			if (
+				(node.type === "compute" || (node.type === "hybrid" && node.hybridRoles?.compute)) &&
+				node.externalNic
+			) {
 				invalidNodes.push(`${node.hostname} (compute with external interface)`);
 			}
 			if ((node.type === "network" || node.type === "compute" || node.type === "storage") && !node.tunnelNic) {
 				invalidNodes.push(`${node.hostname} (${node.type} without tunnel interface)`);
 			}
 			if (node.type === "hybrid" && node.hybridRoles) {
-				const needsTunnel = node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage;
-				if (needsTunnel && !node.tunnelNic) {
-					invalidNodes.push(`${node.hostname} (hybrid with roles requiring tunnel)`);
+				const hasOtherRoles = node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage;
+				
+				// If hybrid has ONLY controller role, it cannot have tunnel interface
+				if (node.hybridRoles.controller && !hasOtherRoles && node.tunnelNic) {
+					invalidNodes.push(`${node.hostname} (hybrid with only controller role has tunnel interface)`);
 				}
-				if (node.hybridRoles.controller && node.tunnelNic) {
-					invalidNodes.push(`${node.hostname} (hybrid controller with tunnel)`);
+				
+				// If hybrid has controller AND other roles, it must have tunnel interface
+				if (node.hybridRoles.controller && hasOtherRoles && !node.tunnelNic) {
+					invalidNodes.push(`${node.hostname} (hybrid with controller and other roles missing tunnel interface)`);
+				}
+				
+				// If hybrid has other roles (non-controller), it must have tunnel interface
+				if (hasOtherRoles && !node.tunnelNic) {
+					invalidNodes.push(`${node.hostname} (hybrid with roles requiring tunnel interface)`);
 				}
 			}
 		}
 
 		if (invalidNodes.length > 0) {
-			recommendations.push(`❌ Configuration Issues: Fix these constraint violations: ${invalidNodes.join(", ")}`);
+			recommendations.push(
+				`❌ Configuration Issues: Fix these constraint violations: ${invalidNodes.join(", ")}`
+			);
 		}
 
 		// Performance recommendations

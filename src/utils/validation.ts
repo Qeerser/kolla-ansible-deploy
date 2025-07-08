@@ -162,9 +162,17 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 
 		// Handle hybrid nodes
 		if (node.type === "hybrid" && node.hybridRoles) {
-			// If hybrid has controller role, it cannot have tunnel interface
-			if (node.hybridRoles.controller && node.tunnelNic?.ip) {
-				details.push(`Hybrid node ${node.hostname} with controller role cannot have a tunnel interface.`);
+			const hasOtherRoles = node.hybridRoles.network || node.hybridRoles.compute || node.hybridRoles.storage;
+			
+			// If hybrid has ONLY controller role, it cannot have tunnel interface
+			if (node.hybridRoles.controller && !hasOtherRoles && node.tunnelNic?.ip) {
+				details.push(`Hybrid node ${node.hostname} with only controller role cannot have a tunnel interface.`);
+				isValid = false;
+			}
+
+			// If hybrid has controller AND other roles, it must have tunnel interface for the other roles
+			if (node.hybridRoles.controller && hasOtherRoles && !node.tunnelNic?.ip) {
+				details.push(`Hybrid node ${node.hostname} with controller and other roles must have a tunnel interface for non-controller services.`);
 				isValid = false;
 			}
 
@@ -196,14 +204,18 @@ export const validateConfiguration = (nodes: Node[], config: NetworkConfig): Val
 		// Check that external and VIP external interfaces are different
 		if (node.externalNic?.name && node.vipExternalNic?.name) {
 			if (node.externalNic.name === node.vipExternalNic.name) {
-				details.push(`Node ${node.hostname}: External interface and VIP external interface cannot be the same.`);
+				details.push(
+					`Node ${node.hostname}: External interface and VIP external interface cannot be the same.`
+				);
 				isValid = false;
 			}
 		}
 
 		// Validate that VIP external interface doesn't have a specific IP (should be configured via network config)
 		if (node.vipExternalNic?.ip && node.vipExternalNic.ip.trim() !== "") {
-			details.push(`Node ${node.hostname}: VIP external interface should not have a specific IP address. Use network configuration instead.`);
+			details.push(
+				`Node ${node.hostname}: VIP external interface should not have a specific IP address. Use network configuration instead.`
+			);
 			isValid = false;
 		}
 	}
