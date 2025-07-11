@@ -18,8 +18,9 @@ export class TutorialDataService {
 		const uniqueNodes = allNodes.filter((node, index, self) => index === self.findIndex((n) => n.id === node.id));
 
 		return [
+			this.generateNetworkConfigStep(networkConfig, uniqueNodes),
 			this.generateSystemPreparationStep(uniqueNodes),
-			this.generatePythonInstallationStep(),
+			this.generatePythonInstallationStep(uniqueNodes),
 			this.generateSSHSetupStep(uniqueNodes, networkConfig),
 			this.generateVirtualEnvironmentStep(networkConfig, uniqueNodes),
 			this.generateAnsibleInstallationStep(),
@@ -38,58 +39,292 @@ export class TutorialDataService {
 			this.generateReconfigureStep(),
 		];
 	}
+	private static generateNetworkConfigStep(networkConfig: NetworkConfig, nodes: Node[]): TutorialStep {
+		const nodeCommands = nodes.map((node) => {
+			const commands = [
+				`# Network configuration for ${node.hostname} (${node.type} node)`,
+				"",
+				"# 1. Enable systemd-networkd service",
+				"$ sudo systemctl status systemd-networkd",
+				"# If not active, enable and start it:",
+				"$ sudo systemctl enable systemd-networkd",
+				"$ sudo systemctl start systemd-networkd",
+				"",
+				`# 2. Configure management interface (${node.managementNic.name})`,
+				`$ sudo nano /etc/systemd/network/10-${node.managementNic.name}.network`,
+				"",
+				"# Add the following content:",
+				"[Match]",
+				`Name=${node.managementNic.name}`,
+				"",
+				"[Network]",
+				`Address=${node.managementNic.ip}/${networkConfig.managementCidr.split("/")[1]}`,
+				`Gateway=${networkConfig.managementCidr.split("/")[0].split(".").slice(0, 3).join(".")}.1`,
+				"DNS=8.8.8.8",
+				"DNS=8.8.4.4",
+				"",
+			];
+
+			// Add tunnel interface configuration if node has one
+			if (node.tunnelNic) {
+				commands.push(
+					`# 3. Configure tunnel interface (${node.tunnelNic.name})`,
+					`$ sudo nano /etc/systemd/network/20-${node.tunnelNic.name}.network`,
+					"",
+					"# Add the following content:",
+					"[Match]",
+					`Name=${node.tunnelNic.name}`,
+					"",
+					"[Network]",
+					`Address=${node.tunnelNic.ip}/${networkConfig.tunnelCidr.split("/")[1]}`,
+					""
+				);
+			}
+
+			// Add external interface configuration if node has one
+			if (node.externalNic) {
+				commands.push(
+					`# 4. Configure external interface (${node.externalNic.name})`,
+					`$ sudo nano /etc/systemd/network/30-${node.externalNic.name}.network`,
+					"",
+					"# Add the following content:",
+					"[Match]",
+					`Name=${node.externalNic.name}`,
+					"",
+					"[Network]",
+					node.externalNic.ip
+						? `Address=${node.externalNic.ip}/${networkConfig.externalCidr.split("/")[1]}`
+						: "# No static IP - will be managed by Neutron",
+					""
+				);
+			}
+
+			// Add VIP external interface configuration if node has one
+			if (node.vipExternalNic) {
+				commands.push(
+					`# 5. Configure VIP external interface (${node.vipExternalNic.name})`,
+					`$ sudo nano /etc/systemd/network/40-${node.vipExternalNic.name}.network`,
+					"",
+					"# Add the following content:",
+					"[Match]",
+					`Name=${node.vipExternalNic.name}`,
+					"",
+					"[Network]",
+					"# No static IP - will be managed by Kolla VIP",
+					""
+				);
+			}
+
+			commands.push(
+				"# 6. Restart networking service",
+				"$ sudo systemctl restart systemd-networkd",
+				"$ sudo systemctl restart networking",
+				"",
+				"# 7. Verify network configuration",
+				"$ ip addr show",
+				"$ ip route show",
+				"",
+				"# 8. Test connectivity to other nodes",
+				...nodes
+					.filter((n) => n.id !== node.id)
+					.map((otherNode) => `$ ping -c 2 ${otherNode.managementNic.ip} # ${otherNode.hostname}`),
+				""
+			);
+
+			return {
+				nodeId: node.id,
+				hostname: node.hostname,
+				nodeType: `${node.type}${
+					node.type === "hybrid"
+						? ` (${Object.entries(node.hybridRoles || {})
+								.filter(([, enabled]) => enabled)
+								.map(([role]) => role)
+								.join(", ")})`
+						: ""
+				}`,
+				commands,
+			};
+		});
+
+		return {
+			id: 0,
+			title: "Network Configuration",
+			description: "Configure network interface settings for each OpenStack node",
+			nodeCommands,
+		};
+	}
 
 	private static generateSystemPreparationStep(nodes: Node[]): TutorialStep {
 		const controllerNode = nodes.find((node) => node.type === "controller" || node.type === "hybrid");
 
-		let commands = [
-			"# On every host:",
-			"",
-			"$ uname -a",
-			"Linux ...-generic... # <-- generic kernel is recommended for Debian 12",
-			"$ sudo apt update && sudo apt upgrade -y",
-			"$ test -f /var/run/reboot-required && sudo reboot",
-			"",
-		];
+		const nodeCommands = nodes.map((node) => {
+			const commands = [
+				`# System preparation for ${node.hostname} (${node.type} node)`,
+				"",
+				"# 1. Check system information",
+				"$ uname -a",
+				"# Should show: Linux ...-generic... (generic kernel recommended for Debian 12)",
+				"",
+				"# 2. Update system packages",
+				"$ sudo apt update && sudo apt upgrade -y",
+				"",
+				"# 3. Check if reboot is required",
+				"$ test -f /var/run/reboot-required && sudo reboot",
+				"# If reboot is required, system will restart automatically",
+			];
 
-		if (controllerNode) {
-			commands = commands.concat([`On ${controllerNode.hostname} host:`, "", "$ cat /etc/hosts", "..."]);
+			// Add hosts file configuration only for controller node
+			if (controllerNode && node.id === controllerNode.id) {
+				commands.push(
+					"",
+					"# 4. Configure hosts file (controller node only)",
+					"$ cat /etc/hosts",
+					"# Current hosts file content...",
+					"",
+					"$ sudo nano /etc/hosts",
+					"# Add the following entries at the end of the file:"
+				);
 
-			// Add each node's hostname mapping
-			nodes.forEach((node) => {
-				commands.push(`${node.managementNic.ip} ${node.hostname}`);
-			});
+				nodes.forEach((hostNode) => {
+					commands.push(`${hostNode.managementNic.ip} ${hostNode.hostname}`);
+				});
 
-			commands = commands.concat([
-				"...",
-				`$ sudo nano /etc/hosts`,
-				"# Add all node hostnames to /etc/hosts file",
-			]);
-		}
+				commands.push(
+					"",
+					"# Save and exit the editor",
+					"",
+					"# 5. Verify hosts file configuration",
+					"$ cat /etc/hosts",
+					"# Should now include all node entries"
+				);
+			} else {
+				commands.push(
+					"",
+					"# 4. Verify hostname resolution",
+					"$ hostname",
+					`# Should return: ${node.hostname}`,
+					"",
+					"# 5. Test connectivity to controller",
+					controllerNode
+						? `$ ping -c 2 ${controllerNode.managementNic.ip}`
+						: "# No controller node configured"
+				);
+			}
+
+			return {
+				nodeId: node.id,
+				hostname: node.hostname,
+				nodeType: `${node.type}${
+					node.type === "hybrid"
+						? ` (${Object.entries(node.hybridRoles || {})
+								.filter(([, enabled]) => enabled)
+								.map(([role]) => role)
+								.join(", ")})`
+						: ""
+				}`,
+				commands,
+			};
+		});
 
 		return {
 			id: 1,
 			title: "Host Preparation (Debian 12)",
-			description: "Check and prepare Debian 12 host systems",
-			commands,
+			description: "Check and prepare Debian 12 host systems for each node",
+			nodeCommands,
 		};
 	}
 
-	private static generatePythonInstallationStep(): TutorialStep {
+	private static generatePythonInstallationStep(nodes: Node[]): TutorialStep {
+		const deploymentNode = nodes.find((node) => node.type === "controller" || node.type === "hybrid");
+
+		const nodeCommands = nodes.map((node) => {
+			const isDeploymentNode = node.id === deploymentNode?.id;
+
+			if (isDeploymentNode) {
+				// Deployment node - full Python installation
+				const commands = [
+					`# Python installation on ${node.hostname} (deployment node)`,
+					"",
+					"# 1. Install Python development packages for Debian 12",
+					"$ sudo apt install python3-dev python3-venv python3-pip python3-setuptools python3-dbus",
+					"",
+					"# 2. Install additional system tools",
+					"$ sudo apt install git curl wget libffi-dev gcc libssl-dev libdbus-glib-1-dev",
+					"",
+					"# 3. Create user for OpenStack deployment",
+					"$ sudo useradd -s /bin/bash -d /opt/stack -m openstack",
+					"$ sudo chmod +x /opt/stack",
+					"$ echo 'openstack ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/openstack",
+					"# 4. Set password for kolla user (if required)",
+					"$ sudo passwd openstack",
+					"# Enter password when prompted",
+					"",
+					"# 5. Verify Python installation",
+					"$ python3 --version",
+					"# Should show Python 3.x.x",
+					"",
+					"# 6. Verify pip installation",
+					"$ pip3 --version",
+					"# Should show pip version information",
+				];
+
+				return {
+					nodeId: node.id,
+					hostname: node.hostname,
+					nodeType: `${node.type}${
+						node.type === "hybrid"
+							? ` (${Object.entries(node.hybridRoles || {})
+									.filter(([, enabled]) => enabled)
+									.map(([role]) => role)
+									.join(", ")})`
+							: ""
+					}`,
+					commands,
+				};
+			} else {
+				// Other nodes - only user setup and password configuration
+				const commands = [
+					`# User setup on ${node.hostname} (${node.type} node)`,
+					"",
+					"# 1. Create user for OpenStack deployment",
+					"$ sudo useradd -s /bin/bash -d /opt/stack -m openstack",
+					"$ sudo chmod +x /opt/stack",
+					"$ echo 'openstack ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/openstack",
+					"",
+					"# 2. Set password for kolla user (if required)",
+					"$ sudo passwd openstack",
+					"# Enter password when prompted",
+					"",
+					"# 3. Verify user creation",
+					"$ id openstack",
+					"# Should show user information",
+					"",
+					"# 4. Test sudo access",
+					"$ sudo -u openstack whoami",
+					"# Should return: openstack",
+				];
+
+				return {
+					nodeId: node.id,
+					hostname: node.hostname,
+					nodeType: `${node.type}${
+						node.type === "hybrid"
+							? ` (${Object.entries(node.hybridRoles || {})
+									.filter(([, enabled]) => enabled)
+									.map(([role]) => role)
+									.join(", ")})`
+							: ""
+					}`,
+					commands,
+				};
+			}
+		});
+
 		return {
 			id: 2,
-			title: "Python Installation (Debian 12)",
-			description: "Install Python and required packages on Debian 12",
-			commands: [
-				"# Install Python development packages for Debian 12",
-				"$ sudo apt install python3-dev python3-venv python3-pip python3-setuptools",
-				"$ sudo apt install git curl wget",
-				"",
-				"# Create user for OpenStack deployment",
-				"$ sudo useradd -s /bin/bash -d /opt/stack -m openstack",
-				"$ sudo chmod +x /opt/stack",
-				"$ echo 'openstack ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/openstack",
-			],
+			title: "Python Installation & User Setup",
+			description: "Install Python on deployment node, create users on all nodes",
+			nodeCommands,
 		};
 	}
 
@@ -97,26 +332,92 @@ export class TutorialDataService {
 		const controllerNode = nodes.find((node) => node.type === "controller" || node.type === "hybrid");
 		const otherNodes = nodes.filter((node) => node.id !== controllerNode?.id);
 
-		const nodeList = otherNodes.map((node) => node.hostname).join(" ");
+		if (!controllerNode) {
+			return {
+				id: 3,
+				title: "SSH Key Setup",
+				description: "Create and distribute SSH keys",
+				commands: ["# No controller node found", "# SSH setup requires a controller or hybrid node"],
+			};
+		}
+
+		// Only deployment node needs SSH setup - others just need to verify
+		const nodeCommands = [
+			// Controller node - does all the SSH setup
+			{
+				nodeId: controllerNode.id,
+				hostname: controllerNode.hostname,
+				nodeType: `${controllerNode.type}${
+					controllerNode.type === "hybrid"
+						? ` (${Object.entries(controllerNode.hybridRoles || {})
+								.filter(([, enabled]) => enabled)
+								.map(([role]) => role)
+								.join(", ")})`
+						: ""
+				}`,
+				commands: [
+					`# SSH Key setup on ${controllerNode.hostname} (deployment node)`,
+					"",
+					"# 1. Generate SSH key pair",
+					"$ ssh-keygen",
+					"# Press enter on every prompt to use defaults",
+					"",
+					"# 2. Distribute SSH keys to all other nodes",
+					`$ for x in ${otherNodes.map((node) => node.hostname).join(" ")}; do ssh-copy-id ${
+						networkConfig.kollaUser
+					}@$x; done`,
+					"",
+					"# 3. Test SSH connectivity to all nodes",
+
+					`$ for x in ${otherNodes.map((node) => node.hostname).join(" ")}; do ssh ${
+						networkConfig.kollaUser
+					}@$x 'lsb_release -a; uname -a'; done`,
+
+					"",
+					"# 4. Test network connectivity",
+
+					...otherNodes.map((node) => `$ ssh ${node.hostname} ping -c 2 ${node.managementNic.ip}`),
+					"",
+					"# SSH setup complete from deployment node",
+				],
+			},
+			// Other nodes - just verification
+			...otherNodes.map((node) => ({
+				nodeId: node.id,
+				hostname: node.hostname,
+				nodeType: `${node.type}${
+					node.type === "hybrid"
+						? ` (${Object.entries(node.hybridRoles || {})
+								.filter(([, enabled]) => enabled)
+								.map(([role]) => role)
+								.join(", ")})`
+						: ""
+				}`,
+				commands: [
+					`# SSH verification on ${node.hostname}`,
+					"",
+					"# 1. Verify SSH key was installed by deployment node",
+					"$ cat ~/.ssh/authorized_keys",
+					"# Should contain the public key from deployment node",
+					"",
+					"# 2. Test reverse SSH connection to deployment node",
+					`$ ssh ${networkConfig.kollaUser}@${controllerNode.hostname} 'hostname'`,
+					`# Should return: ${controllerNode.hostname}`,
+					"",
+					"# 3. Verify network connectivity",
+					`$ ping -c 2 ${controllerNode.managementNic.ip}`,
+					"# Should successfully ping deployment node",
+					"",
+					"# Verification complete",
+				],
+			})),
+		];
 
 		return {
 			id: 3,
 			title: "SSH Key Setup",
-			description: "Create and distribute SSH keys",
-			commands: [
-				"$ ssh-keygen",
-				"...",
-				"press enter on every prompt",
-				"...",
-				`$ for x in ${nodeList}; do ssh-copy-id ${networkConfig.kollaUser}@$x; done`,
-				"$ ",
-				"# Test connectivity",
-				`$ for x in ${nodeList}; do \\`,
-				`     ssh ${networkConfig.kollaUser}@$x 'lsb_release -a; uname -a'; done`,
-				"$ ",
-				"# Test network connectivity",
-				...otherNodes.map((node) => `$ ssh ${node.hostname} ping -c 2 ${node.managementNic.ip}`),
-			],
+			description: "Create and distribute SSH keys from deployment node only",
+			nodeCommands,
 		};
 	}
 
@@ -136,7 +437,8 @@ export class TutorialDataService {
 				"$ source $HOME/kolla-ops/bin/activate",
 				`(kolla-ops) ${userName}@${controllerHostname}:~$ `,
 				"(kolla-ops)...:~$",
-				"(kolla-ops)...:~$ pip install -U pip setuptools wheel",
+				"(kolla-ops)...:~$ pip install -U pip",
+				"(kolla-ops)...:~$ pip install docker python-dbus",
 			],
 		};
 	}
@@ -147,7 +449,7 @@ export class TutorialDataService {
 			title: "Ansible Installation (2025.1 Compatible)",
 			description: "Install Ansible compatible with Kolla-Ansible 2025.1",
 			commands: [
-				"(kolla-ops)...:~$ pip install 'ansible>=9,<10'",
+				"(kolla-ops)...:~$ pip install 'ansible>=10,<12'",
 				"(kolla-ops)...:~$ nano $HOME/ansible.cfg",
 				"",
 				"(kolla-ops)...:~$ cat $HOME/ansible.cfg",
@@ -193,6 +495,7 @@ export class TutorialDataService {
 			'kolla_base_distro: "debian"',
 			'openstack_release: "2025.1"',
 			`kolla_internal_vip_address: "${networkConfig.kollaIntVipAddr}"`,
+			`kolla_external_vip_address: "${networkConfig.vipExternalIp || ""}"`,
 			"",
 			"# --> For container engine options:",
 			"# --> uncomment or add the following lines",
@@ -318,21 +621,45 @@ export class TutorialDataService {
 	}
 
 	private static generateLVMVolumeStep(nodes: Node[]): TutorialStep {
+		// Only include nodes that have storage disks configured
 		const storageNodes = nodes.filter(
 			(node) =>
-				node.type === "storage" ||
-				node.type === "compute" ||
-				(node.type === "hybrid" && (node.hybridRoles?.storage || node.hybridRoles?.compute))
+				(node.type === "storage" ||
+					node.type === "compute" ||
+					(node.type === "hybrid" && (node.hybridRoles?.storage || node.hybridRoles?.compute))) &&
+				node.storageDisks &&
+				node.storageDisks.length > 0
 		);
 
-		const commands = [];
+		// If no storage nodes with disks, return a simple step
+		if (storageNodes.length === 0) {
+			return {
+				id: 9,
+				title: "LVM Volume Creation",
+				description: "Create LVM volumes for Cinder storage",
+				commands: [
+					"# No storage nodes with configured disks found",
+					"# This step would normally create LVM volumes for Cinder storage",
+					"# on nodes with storage disks configured",
+					"",
+					"# Please configure storage disks in the node configuration",
+					"# before proceeding with LVM volume creation",
+					"",
+					`On ${nodes.find((n) => n.type === "controller" || n.type === "hybrid")?.hostname || "controller"}`,
+					"(kolla-ops)...:~$ # Continue to next step",
+				],
+			};
+		}
 
-		storageNodes.forEach((node, index) => {
-			if (index > 0) commands.push("");
-
-			commands.push(`On ${node.hostname}:`);
-			commands.push("...");
-			commands.push("$ sudo apt install lvm2 thin-provisioning-tools");
+		const nodeCommands = storageNodes.map((node) => {
+			const commands = [
+				`# LVM Volume setup for ${node.hostname} (${node.type} node)`,
+				"",
+				"# 1. Install LVM tools",
+				"$ sudo apt install lvm2 thin-provisioning-tools",
+				"",
+				"# 2. Create physical volumes and volume groups",
+			];
 
 			// Add commands for each storage disk
 			if (node.storageDisks && node.storageDisks.length > 0) {
@@ -340,31 +667,39 @@ export class TutorialDataService {
 					commands.push(`$ sudo pvcreate ${disk.name}`);
 					commands.push(`$ sudo vgcreate ${disk.volumeGroup} ${disk.name}`);
 				});
-			} else {
-				// Default disk if none specified
-				commands.push("$ sudo pvcreate /dev/sdb");
-				commands.push("$ sudo vgcreate cinder-volumes /dev/sdb");
 			}
 
-			commands.push("$ sudo vgs");
-			commands.push("  VG             #PV #LV #SN Attr   VSize   VFree");
-			commands.push("cinder-volumes   1   0   0 wz--n- <80.00g <80.00g");
-			commands.push("$");
-			commands.push("$ exit");
-		});
+			commands.push(
+				"",
+				"# 3. Verify volume group creation",
+				"$ sudo vgs",
+				"  VG             #PV #LV #SN Attr   VSize   VFree",
+				"cinder-volumes   1   0   0 wz--n- <80.00g <80.00g",
+				"",
+				"# 4. Exit to controller node",
+				"$ exit"
+			);
 
-		commands.push(
-			"",
-			`On ${nodes.find((n) => n.type === "controller" || n.type === "hybrid")?.hostname || "controller"}`,
-			"..."
-		);
-		commands.push("(kolla-ops)...:~$ ");
+			return {
+				nodeId: node.id,
+				hostname: node.hostname,
+				nodeType: `${node.type}${
+					node.type === "hybrid"
+						? ` (${Object.entries(node.hybridRoles || {})
+								.filter(([, enabled]) => enabled)
+								.map(([role]) => role)
+								.join(", ")})`
+						: ""
+				}`,
+				commands,
+			};
+		});
 
 		return {
 			id: 9,
 			title: "LVM Volume Creation",
-			description: "Create LVM volumes for Cinder storage",
-			commands,
+			description: "Create LVM volumes for Cinder storage on nodes with configured disks",
+			nodeCommands,
 		};
 	}
 
@@ -392,11 +727,11 @@ export class TutorialDataService {
 			title: "Deploy OpenStack",
 			description: "Bootstrap, precheck, and deploy OpenStack",
 			commands: [
-				" (kolla-ops)...:~$ kolla-ansible -i multinode bootstrap-servers",
+				" (kolla-ops)...:~$ kolla-ansible bootstrap-servers -i multinode ",
 				" ...",
-				" (kolla-ops)...:~$ kolla-ansible -i multinode prechecks",
+				" (kolla-ops)...:~$ kolla-ansible prechecks -i multinode ",
 				" ...",
-				" (kolla-ops)...:~$ kolla-ansible -i multinode deploy",
+				" (kolla-ops)...:~$ kolla-ansible deploy -i multinode ",
 				" ...",
 			],
 		};
@@ -454,7 +789,7 @@ export class TutorialDataService {
 			title: "Initial Setup",
 			description: "Run initial OpenStack setup script",
 			commands: [
-				"(kolla-ops)...:~$ kolla-ansible post-deploy",
+				"(kolla-ops)...:~$ kolla-ansible post-deploy -i multinode",
 				"(kolla-ops)...:~$ source /etc/kolla/admin-openrc.sh",
 				"# --> you have to run the command above to use openstack CLI.",
 				"(kolla-ops)...:~$ ",
@@ -519,7 +854,7 @@ export class TutorialDataService {
 			description: "Reconfigure OpenStack for additional changes",
 			commands: [
 				"$(kolla-ops)...:~$ source $HOME/kolla-ops/bin/activate",
-				"(kolla-ops)...:~$ kolla-ansible -i multinode reconfigure",
+				"(kolla-ops)...:~$ kolla-ansible reconfigure -i multinode ",
 			],
 		};
 	}

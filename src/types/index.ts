@@ -47,9 +47,17 @@ export interface ValidationResult {
 	details?: string[];
 }
 
+export interface NodeCommands {
+	nodeId: string;
+	hostname: string;
+	nodeType: string;
+	commands: string[];
+}
+
 export interface TutorialStep {
 	id: number;
 	title: string;
 	description: string;
-	commands: string[];
+	commands?: string[];
+	nodeCommands?: NodeCommands[];
 }

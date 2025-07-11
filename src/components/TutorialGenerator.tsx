@@ -11,6 +11,7 @@ interface TutorialGeneratorProps {
 const TutorialGenerator: React.FC<TutorialGeneratorProps> = ({ nodes, networkConfig }) => {
 	const [copiedIndex, setCopiedIndex] = useState<string | number | null>(null);
 	const [copiedType, setCopiedType] = useState<string | null>(null);
+	const [activeNodeTabs, setActiveNodeTabs] = useState<{ [stepId: number]: string }>({});
 
 	const copyToClipboard = async (text: string, index: string | number, type?: string) => {
 		try {
@@ -24,6 +25,10 @@ const TutorialGenerator: React.FC<TutorialGeneratorProps> = ({ nodes, networkCon
 		} catch (err) {
 			console.error("Failed to copy text: ", err);
 		}
+	};
+
+	const setActiveTab = (stepId: number, nodeId: string) => {
+		setActiveNodeTabs((prev) => ({ ...prev, [stepId]: nodeId }));
 	};
 
 	const tutorialSteps = TutorialDataService.generateTutorialSteps(nodes, networkConfig);
@@ -45,14 +50,70 @@ const TutorialGenerator: React.FC<TutorialGeneratorProps> = ({ nodes, networkCon
 						</div>
 
 						<div className="p-6">
-							<CommandBlock
-								commands={step.commands}
-								title={`Step ${step.id} Commands`}
-								index={step.id}
-								onCopy={copyToClipboard}
-								copiedIndex={copiedIndex}
-								copiedType={copiedType || undefined}
-							/>
+							{/* Regular commands for steps without node-specific commands */}
+							{step.commands && (
+								<CommandBlock
+									commands={step.commands}
+									title={`Step ${step.id} Commands`}
+									index={step.id}
+									onCopy={copyToClipboard}
+									copiedIndex={copiedIndex}
+									copiedType={copiedType || undefined}
+								/>
+							)}
+
+							{/* Node-specific commands with tabs */}
+							{step.nodeCommands && (
+								<div>
+									{/* Node tabs */}
+									<div className="flex flex-wrap border-b border-gray-200 mb-4">
+										{step.nodeCommands.map((nodeCmd) => {
+											const isActive =
+												activeNodeTabs[step.id] === nodeCmd.nodeId ||
+												(!activeNodeTabs[step.id] &&
+													step.nodeCommands![0].nodeId === nodeCmd.nodeId);
+											return (
+												<button
+													key={nodeCmd.nodeId}
+													onClick={() => setActiveTab(step.id, nodeCmd.nodeId)}
+													className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+														isActive
+															? "border-blue-500 text-blue-600 bg-blue-50"
+															: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+													}`}
+												>
+													{nodeCmd.hostname}
+													<span className="ml-2 text-xs text-gray-400">
+														({nodeCmd.nodeType})
+													</span>
+												</button>
+											);
+										})}
+									</div>
+
+									{/* Active node commands */}
+									{step.nodeCommands.map((nodeCmd) => {
+										const isActive =
+											activeNodeTabs[step.id] === nodeCmd.nodeId ||
+											(!activeNodeTabs[step.id] &&
+												step.nodeCommands![0].nodeId === nodeCmd.nodeId);
+										if (!isActive) return null;
+
+										return (
+											<div key={nodeCmd.nodeId}>
+												<CommandBlock
+													commands={nodeCmd.commands}
+													title={`Commands for ${nodeCmd.hostname} (${nodeCmd.nodeType})`}
+													index={`${step.id}-${nodeCmd.nodeId}`}
+													onCopy={copyToClipboard}
+													copiedIndex={copiedIndex}
+													copiedType={copiedType || undefined}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							)}
 						</div>
 					</div>
 				))}

@@ -117,11 +117,42 @@ const KollaHelper: React.FC = () => {
 								<p className="text-gray-700 mb-4">{validation.message}</p>
 								{validation.details && validation.details.length > 0 && (
 									<ul className="list-disc pl-5 space-y-1">
-										{validation.details.map((detail, index) => (
-											<li key={index} className="text-sm text-gray-600">
-												{detail}
-											</li>
-										))}
+										{validation.details.map((detail, index) => {
+											// Determine if this is a positive (valid) or negative (invalid) message
+											const isPositive =
+												detail.includes("is a valid") ||
+												detail.includes("is valid") ||
+												detail.includes("passed") ||
+												detail.includes("available for floating IPs on:") ||
+												detail.includes("present in the deployment") ||
+												detail.includes("All required roles");
+
+											const isNegative =
+												detail.includes("invalid") ||
+												detail.includes("Duplicate") ||
+												detail.includes("Error") ||
+												detail.includes("cannot") ||
+												detail.includes("must") ||
+												detail.includes("Missing") ||
+												detail.includes("At least one") ||
+												detail.includes("already used") ||
+												(detail.includes("required for") && !detail.includes("present"));
+
+											return (
+												<li
+													key={index}
+													className={`text-sm ${
+														isPositive
+															? "text-green-700 font-medium"
+															: isNegative
+															? "text-red-700 font-medium"
+															: "text-gray-600"
+													}`}
+												>
+													{detail}
+												</li>
+											);
+										})}
 									</ul>
 								)}
 							</div>

@@ -34,12 +34,11 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 
 	const canHaveTunnelInterface = (node: Node): boolean => {
 		if (node.type === "controller") return false;
-		if (node.type === "hybrid" &&
-			!(
-				node.hybridRoles?.network ||
-				node.hybridRoles?.compute ||
-				node.hybridRoles?.storage
-			)) return false;
+		if (
+			node.type === "hybrid" &&
+			!(node.hybridRoles?.network || node.hybridRoles?.compute || node.hybridRoles?.storage)
+		)
+			return false;
 		return true;
 	};
 
@@ -441,76 +440,80 @@ const NodeManager: React.FC<NodeManagerProps> = ({ nodes, networkConfig, onNodeU
 					</div>
 
 					{/* Tunnel NIC */}
-					{canHaveTunnelInterface(node) && (<div className="mb-4">
-						<div className="flex items-center justify-between mb-2">
-							<h4 className="text-md font-medium text-gray-700">Tunnel Network Interface</h4>
-							{!node.tunnelNic ? (
-								<button
-									onClick={() => addNic(node.id, "tunnelNic")}
-									className="text-blue-500 hover:text-blue-700 text-sm"
-								>
-									Add Tunnel NIC
-								</button>
-							) : (
-								<button
-									onClick={() => removeNic(node.id, "tunnelNic")}
-									disabled={
-										node.type === "compute" ||
-										node.type === "network" ||
-										node.type === "storage" ||
-										(node.type === "hybrid" &&
-											node.hybridRoles &&
-											(node.hybridRoles.network ||
-												node.hybridRoles.compute ||
-												node.hybridRoles.storage))
-									}
-									className={`text-sm ${
-										node.type === "compute" ||
-										node.type === "network" ||
-										node.type === "storage" ||
-										(node.type === "hybrid" &&
-											node.hybridRoles &&
-											(node.hybridRoles.network ||
-												node.hybridRoles.compute ||
-												node.hybridRoles.storage))
-											? "text-gray-400 cursor-not-allowed"
-											: "text-red-500 hover:text-red-700"
-									}`}
-								>
-									Remove
-								</button>
-							)}
-						</div>
-						{node.tunnelNic && (
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-								<div>
+					{canHaveTunnelInterface(node) && (
+						<div className="mb-4">
+							<div className="flex items-center justify-between mb-2">
+								<h4 className="text-md font-medium text-gray-700">Tunnel Network Interface</h4>
+								{!node.tunnelNic ? (
+									<button
+										onClick={() => addNic(node.id, "tunnelNic")}
+										className="text-blue-500 hover:text-blue-700 text-sm"
+									>
+										Add Tunnel NIC
+									</button>
+								) : (
+									<button
+										onClick={() => removeNic(node.id, "tunnelNic")}
+										disabled={
+											node.type === "compute" ||
+											node.type === "network" ||
+											node.type === "storage" ||
+											(node.type === "hybrid" &&
+												node.hybridRoles &&
+												(node.hybridRoles.network ||
+													node.hybridRoles.compute ||
+													node.hybridRoles.storage))
+										}
+										className={`text-sm ${
+											node.type === "compute" ||
+											node.type === "network" ||
+											node.type === "storage" ||
+											(node.type === "hybrid" &&
+												node.hybridRoles &&
+												(node.hybridRoles.network ||
+													node.hybridRoles.compute ||
+													node.hybridRoles.storage))
+												? "text-gray-400 cursor-not-allowed"
+												: "text-red-500 hover:text-red-700"
+										}`}
+									>
+										Remove
+									</button>
+								)}
+							</div>
+							{node.tunnelNic && (
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div>
+										<input
+											type="text"
+											value={node.tunnelNic.name}
+											onChange={(e) =>
+												updateNicField(node.id, "tunnelNic", "name", e.target.value)
+											}
+											className={`input-field ${
+												isInterfaceNameDuplicate(node, "tunnel", node.tunnelNic.name)
+													? "border-red-500 bg-red-50"
+													: ""
+											}`}
+											placeholder="NIC name (e.g., ens4)"
+										/>
+										{isInterfaceNameDuplicate(node, "tunnel", node.tunnelNic.name) && (
+											<p className="text-xs text-red-600 mt-1">
+												Interface name already used on this node
+											</p>
+										)}
+									</div>
 									<input
 										type="text"
-										value={node.tunnelNic.name}
-										onChange={(e) => updateNicField(node.id, "tunnelNic", "name", e.target.value)}
-										className={`input-field ${
-											isInterfaceNameDuplicate(node, "tunnel", node.tunnelNic.name)
-												? "border-red-500 bg-red-50"
-												: ""
-										}`}
-										placeholder="NIC name (e.g., ens4)"
+										value={node.tunnelNic.ip}
+										onChange={(e) => updateNicField(node.id, "tunnelNic", "ip", e.target.value)}
+										className="input-field"
+										placeholder="IP address"
 									/>
-									{isInterfaceNameDuplicate(node, "tunnel", node.tunnelNic.name) && (
-										<p className="text-xs text-red-600 mt-1">
-											Interface name already used on this node
-										</p>
-									)}
 								</div>
-								<input
-									type="text"
-									value={node.tunnelNic.ip}
-									onChange={(e) => updateNicField(node.id, "tunnelNic", "ip", e.target.value)}
-									className="input-field"
-									placeholder="IP address"
-								/>
-							</div>
-						)}
-					</div>)}
+							)}
+						</div>
+					)}
 
 					{/* External NIC - Only for network nodes or hybrid with network role */}
 					{canHaveExternalInterface(node) && (
