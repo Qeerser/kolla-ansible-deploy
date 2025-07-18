@@ -7,31 +7,31 @@ export const initialState: AppState = {
 			id: "1",
 			hostname: "controller01",
 			type: "controller",
-			managementNic: { id: "mn1", name: "ens3", ip: "172.16.100.11" },
-			vipExternalNic: { id: "vip1", name: "ens5", ip: "" },
+			managementNic: { id: "mn1", name: "enp1s0", ip: "172.16.100.11" },
+			vipExternalNic: { id: "vip1", name: "enp3s0", ip: "" },
 		},
 		{
 			id: "2",
 			hostname: "network01",
 			type: "network",
-            externalNic: { id: "en1", name: "ens5", ip: "" },
-			managementNic: { id: "mn2", name: "ens3", ip: "172.16.100.21" },
-			tunnelNic: { id: "tn2", name: "ens4", ip: "192.168.100.21" },
+            externalNic: { id: "en1", name: "enp3s0", ip: "" },
+			managementNic: { id: "mn2", name: "enp1s0", ip: "172.16.100.21" },
+			tunnelNic: { id: "tn2", name: "enp2s0", ip: "192.168.100.21" },
 		},
         		{
 			id: "3",
 			hostname: "compute01",
 			type: "compute",
-			managementNic: { id: "mn3", name: "ens3", ip: "172.16.100.31" },
-			tunnelNic: { id: "tn3", name: "ens4", ip: "192.168.100.31" }
+			managementNic: { id: "mn3", name: "enp1s0", ip: "172.16.100.31" },
+			tunnelNic: { id: "tn3", name: "enp2s0", ip: "192.168.100.31" }
 		},
         		{
 			id: "4",
 			hostname: "storage01",
 			type: "storage",
-			managementNic: { id: "mn4", name: "ens3", ip: "172.16.100.41" },
-			tunnelNic: { id: "tn4", name: "ens4", ip: "192.168.100.41" },
-			storageDisks: [{ id: "sd1", name: "/dev/sdb", volumeGroup: "cinder-volumes" }]
+			managementNic: { id: "mn4", name: "enp1s0", ip: "172.16.100.41" },
+			tunnelNic: { id: "tn4", name: "enp2s0", ip: "192.168.100.41" },
+			storageDisks: [{ id: "sd1", name: "/dev/vdb", volumeGroup: "cinder-volumes" }]
 		},
 	],
 	networkConfig: {
